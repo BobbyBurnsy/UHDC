@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UHDC Tools | NetworkScan.ps1</title>
+    <style>
+        /* CORE VARIABLES & RESET */
+        :root {
+            --bg-dark: #1E1E1E;
+            --bg-darker: #111111;
+            --neon-green: #00FF00;
+            --neon-blue: #00A2ED;
+            --text-main: #DDDDDD;
+            --text-muted: #888888;
+            --border-color: #333333;
+            --danger-red: #FF4444;
+            --warning-yellow: #FFD700;
+            --training-gold: #FFD700;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        .console-font {
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        /* NAVIGATION BAR */
+        nav {
+            background-color: var(--bg-darker);
+            border-bottom: 1px solid var(--neon-blue);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .nav-logo {
+            color: var(--neon-blue);
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--neon-green);
+        }
+
+        /* LAYOUT & CONTAINERS */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            padding: 3rem 0 2rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        section {
+            padding: 2.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* TYPOGRAPHY & ACCENTS */
+        h1 {
+            font-size: 2.5rem;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--neon-green);
+            margin-bottom: 1.2rem;
+            font-weight: normal;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: #FFFFFF;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid var(--neon-blue);
+            padding-left: 10px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 1.2rem;
+            color: #CCCCCC;
+        }
+
+        strong {
+            color: #FFFFFF;
+        }
+
+        ul, ol {
+            margin-bottom: 1.5rem;
+            margin-left: 2rem;
+            color: #CCCCCC;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .highlight { color: var(--neon-green); }
+        .danger { color: var(--danger-red); font-weight: bold; }
+        .warning { color: var(--warning-yellow); }
+
+        /* TERMINAL WINDOW EFFECT */
+        .terminal-box {
+            background-color: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--neon-blue);
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin: 1.5rem 0;
+        }
+
+        .terminal-box p {
+            margin-bottom: 0.5rem;
+            font-size: 1.05rem;
+        }
+
+        /* TRAINING BLOCKS */
+        .training-block {
+            background-color: #1A1A1A;
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--training-gold);
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+        }
+
+        .training-header {
+            color: var(--training-gold);
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .training-code {
+            background-color: #0C0C0C;
+            color: var(--neon-green);
+            padding: 1rem;
+            border: 1px solid #333;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            overflow-x: auto;
+        }
+
+        /* QA BLOCKS */
+        .qa-block {
+            background-color: #252526;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            border-left: 3px solid var(--neon-green);
+        }
+
+        .qa-question {
+            font-weight: bold;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+            font-size: 1.15rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo console-font">UHDC.io</a>
+            <div class="nav-links console-font">
+                <a href="index.html">HOME</a>
+                <a href="about.html">ABOUT</a>
+                <a href="tools.html">TOOLS</a>
+                <a href="governance.html">GOVERNANCE</a>
+                <a href="https://github.com/bobbyburnsy" target="_blank" class="btn-nav">GITHUB REPO</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <p class="console-font" style="color: var(--text-muted); margin-bottom: 0.5rem;">\Core\NetworkScan.ps1</p>
+            <h1>NetworkScan.ps1</h1>
+            <p class="console-font highlight">>>> CONTEXT-AWARE LOCATOR ENGINE</p>
+        </header>
+
+        <section style="padding-top: 1rem; border-bottom: none;">
+            <div class="terminal-box console-font">
+                <p style="color: var(--text-main);">=========================================</p>
+                <p style="color: var(--text-main);">       [UHDC] FIND USER ON NETWORK       </p>
+                <p style="color: var(--text-main); margin-bottom: 1.5rem;">=========================================</p>
+
+                <p style="color: var(--text-main);"> [UHDC] Resolving identity for 'jsmith'...</p>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;"> [UHDC] [OK] Resolved: John Smith</p>
+
+                <p style="color: var(--text-main);"> [UHDC] [SMART] Checking history for jsmith...</p>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">   Checking last known: LAPTOP-US-4829... (Offline)</p>
+
+                <p style="color: var(--warning-yellow);"> [UHDC] [!] OU Pivot: Scanning subnet OU=Computers,OU=Accounting...</p>
+                <p style="color: var(--text-main);"> [UHDC] [!] Scanning 42 computers... (This may take a moment)</p>
+                <p style="color: var(--text-muted);"> ...........</p>
+
+                <p style="color: var(--neon-green); margin-top: 1rem;"> [UHDC] [MATCH] DESKTOP-HQ-9912 (jsmith)</p>
+                <p style="color: var(--neon-blue); margin-bottom: 1.5rem;"> [INTEL] Auto-Filled Target PC: DESKTOP-HQ-9912 to Action panels.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">IT Pro Summary</h2>
+            <p>This is a targeted intelligence engine designed to locate a specific user on the network when their historical data is stale. It utilizes a cascading fallback logic: It first resolves the exact AD identity, checks the central <code>UserHistory.json</code> for a quick WMI match, and if the user has moved desks, it pivots using their Active Directory "Office" or "OU" attribute to perform a highly restricted, context-aware sweep of their department's computers.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">When to Use This Tool</h2>
+
+            <h3>The Scenario</h3>
+            <p>You are on a live call with a user who needs immediate remote assistance. You run a Smart Search, but their last known laptop is turned off. The user explains they are hot-desking today or using a shared kiosk in their department, but they don't know how to find the computer name. You cannot remote in without a hostname.</p>
+
+            <h3>The Fix</h3>
+            <p>Instead of walking the user through opening the command prompt to type <code>hostname</code>, the technician clicks "Net Scan." The script realizes the user's old laptop is offline. It looks at their AD profile, sees they work in "Accounting," and instantly pulls a list of the 40 computers located in the Accounting OU. It rapidly pings and queries those 40 machines in the background. Within 10 seconds, it finds the user logged into <code>DESKTOP-HQ-9912</code>, updates the central database, and auto-fills the console so the technician can immediately send a Remote Assistance invite.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">Interactive Training Engine</h2>
+            <p>When a junior technician runs this tool with <strong>Training Mode</strong> enabled, the UHDC pauses execution at each critical phase. It displays a pop-up explaining <em>why</em> the action is necessary, what the in-person equivalent would be, and reveals the exact PowerShell code being executed under the hood. Here is what the trainee sees during a Network Scan:</p>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 1: RESOLVE AD IDENTITY</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>This happens automatically when you click 'Net Scan'. It ensures we are searching for the exact, correct user account before we start sweeping the network.</p>
+                <p><strong>WHAT IT DOES:</strong><br>We query Active Directory for the provided username to retrieve their exact 'SamAccountName', 'Office' code, and 'DistinguishedName' (OU path). We will use this data to narrow down our search radius later.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>Opening ADUC, searching for the user, and checking the 'Organization' tab to see what building or department they work in so you know which floor to walk to.</p>
+                <div class="training-code console-font">$exact = Get-ADUser -Identity $TargetUser -Properties Office, DistinguishedName<br>$ResolvedUser = $exact.SamAccountName</div>
+            </div>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 2: CHECK HISTORICAL DATABASE</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>Before we waste time scanning hundreds of computers, we check if we already know where this user usually sits.</p>
+                <p><strong>WHAT IT DOES:</strong><br>We read the central 'UserHistory.json' file to find the last known PC this user logged into. We then send a quick WMI query to that specific PC to see if they are still there. If they are, the scan finishes instantly.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>Checking your personal notes or asking a coworker, 'Hey, doesn't John usually sit at desk 4B?' and walking straight there first.</p>
+                <div class="training-code console-font">$match = $raw | Where-Object { $_.User -eq $ResolvedUser } | Sort-Object LastSeen -Descending | Select-Object -First 1<br>$check = Get-CimInstance -ClassName Win32_ComputerSystem -ComputerName $match.Computer</div>
+            </div>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 3: CONTEXT-AWARE TARGETING</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>If the user isn't at their usual desk (or they are a new hire with no history), we need to scan the network. But scanning 5,000 PCs takes too long.</p>
+                <p><strong>WHAT IT DOES:</strong><br>We use the 'Office' attribute or the Organizational Unit (OU) we gathered in Step 1 to pivot our search. If the user is in the 'Accounting' OU, we only pull a list of computers that are also in the 'Accounting' OU. This reduces our scan target from thousands of PCs down to just a few dozen.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>Knowing the user works in Accounting, so you only walk the floor of the Accounting department looking for them, rather than checking every desk in the entire building.</p>
+                <div class="training-code console-font">if ($dn -match "OU=Users,(.+)$") {<br>&nbsp;&nbsp;&nbsp;&nbsp;$searchBase = "OU=Computers,$($matches[1])"<br>&nbsp;&nbsp;&nbsp;&nbsp;$computers = Get-ADComputer -Filter * -SearchBase $searchBase<br>}</div>
+            </div>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 4: EXECUTE WMI SWEEP</div>
+                <p><strong>WHAT IT DOES:</strong><br>We iterate through our narrowed list of computers. We send a 500ms ping to see if the PC is turned on. If it is, we use WMI to ask the PC 'Who is logged in right now?'. As soon as we find a match for our target user, we break the loop, update the history database, and send the PC name back to the GUI.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>Walking down the row of desks in the Accounting department, wiggling the mouse on every active computer, and reading the lock screen until you find the user you are looking for.</p>
+                <div class="training-code console-font">foreach ($pc in $computers) {<br>&nbsp;&nbsp;&nbsp;&nbsp;if (Test-Connection $pc) {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$compInfo = Get-CimInstance Win32_ComputerSystem -ComputerName $pc<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if ($compInfo.UserName -match $ResolvedUser) { break }<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>}</div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">Technical Execution Pipeline</h2>
+            <ol>
+                <li><strong>Identity Resolution (LDAP):</strong> Queries AD over <strong>Port 389</strong> to resolve the exact <code>SamAccountName</code> and extract the user's <code>DistinguishedName</code> and <code>Office</code> attributes.</li>
+                <li><strong>History Verification (SMB/WMI):</strong> Reads <code>UserHistory.json</code> over <strong>Port 445</strong>. If a previous PC is found, it sends a targeted WMI query over <strong>Port 5985</strong> to verify if the user is still logged in there.</li>
+                <li><strong>Subnet Pivoting (LDAP):</strong> If the history check fails, it uses RegEx to parse the user's OU (e.g., <code>OU=Users,OU=Accounting,DC=Domain</code>) and dynamically rewrites it to target the corresponding computer OU (<code>OU=Computers,OU=Accounting,DC=Domain</code>). It queries AD for all computer objects within that specific scope.</li>
+                <li><strong>Rapid Polling (ICMP/WMI):</strong> Iterates through the narrowed list. It uses a highly aggressive 500ms ICMP ping timeout to quickly skip offline machines, followed by a <code>Win32_ComputerSystem</code> WMI query to check the active console user.</li>
+                <li><strong>Database Injection & UI Handoff:</strong> Upon a successful match, it breaks the loop, silently triggers <code>Helper_UpdateHistory.ps1</code> to log the new location, and outputs the <code>[GUI:UPDATE_TARGET:...]</code> tag to auto-fill the technician's dashboard.</li>
+            </ol>
+        </section>
+
+        <section style="border-bottom: none;">
+            <h2 class="console-font">Q&A</h2>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Why doesn't the script just scan the entire Active Directory environment?</div>
+                <div class="qa-answer">Performance and safety. Scanning 5,000 computers sequentially via WMI could take 15 to 30 minutes, which is useless when a user is waiting on the phone. Furthermore, aggressive global WMI sweeps can trigger intrusion detection systems (IDS) or be flagged as lateral movement by security teams. By pivoting off the user's OU, we reduce the scan target to a highly localized, logical subnet, returning results in seconds.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: What happens if the user's AD profile doesn't have an Office attribute or a clean OU structure?</div>
+                <div class="qa-answer">The script is designed to fail safely. If it cannot determine a logical, narrowed scope to scan, it will abort the operation and display: <code>[X] ABORTING: User context (Office/OU) not found. Global Scanning is disabled for performance/safety.</code> This prevents the script from accidentally initiating a domain-wide sweep.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Does this tool find users who are connected via VPN or Remote Desktop?</div>
+                <div class="qa-answer">Yes. The <code>Win32_ComputerSystem</code> WMI class registers the primary user logged into the Windows session, regardless of whether they are physically at the keyboard or connected via a corporate VPN tunnel, as long as the endpoint is reachable over the network.</div>
+            </div>
+        </section>
+    </div>
+
+</body>
+</html>

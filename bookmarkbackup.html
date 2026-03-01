@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UHDC Tools | BookmarkBackup.ps1</title>
+    <style>
+        /* CORE VARIABLES & RESET */
+        :root {
+            --bg-dark: #1E1E1E;
+            --bg-darker: #111111;
+            --neon-green: #00FF00;
+            --neon-blue: #00A2ED;
+            --text-main: #DDDDDD;
+            --text-muted: #888888;
+            --border-color: #333333;
+            --danger-red: #FF4444;
+            --warning-yellow: #FFD700;
+            --training-gold: #FFD700;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        .console-font {
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        /* NAVIGATION BAR */
+        nav {
+            background-color: var(--bg-darker);
+            border-bottom: 1px solid var(--neon-blue);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .nav-logo {
+            color: var(--neon-blue);
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--neon-green);
+        }
+
+        /* LAYOUT & CONTAINERS */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            padding: 3rem 0 2rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        section {
+            padding: 2.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* TYPOGRAPHY & ACCENTS */
+        h1 {
+            font-size: 2.5rem;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--neon-green);
+            margin-bottom: 1.2rem;
+            font-weight: normal;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: #FFFFFF;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid var(--neon-blue);
+            padding-left: 10px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 1.2rem;
+            color: #CCCCCC;
+        }
+
+        strong {
+            color: #FFFFFF;
+        }
+
+        ul, ol {
+            margin-bottom: 1.5rem;
+            margin-left: 2rem;
+            color: #CCCCCC;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .highlight { color: var(--neon-green); }
+        .danger { color: var(--danger-red); font-weight: bold; }
+        .warning { color: var(--warning-yellow); }
+
+        /* TERMINAL WINDOW EFFECT */
+        .terminal-box {
+            background-color: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--neon-blue);
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin: 1.5rem 0;
+        }
+
+        .terminal-box p {
+            margin-bottom: 0.5rem;
+            font-size: 1.05rem;
+        }
+
+        /* TRAINING BLOCKS */
+        .training-block {
+            background-color: #1A1A1A;
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--training-gold);
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+        }
+
+        .training-header {
+            color: var(--training-gold);
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .training-code {
+            background-color: #0C0C0C;
+            color: var(--neon-green);
+            padding: 1rem;
+            border: 1px solid #333;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            overflow-x: auto;
+        }
+
+        /* QA BLOCKS */
+        .qa-block {
+            background-color: #252526;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            border-left: 3px solid var(--neon-green);
+        }
+
+        .qa-question {
+            font-weight: bold;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+            font-size: 1.15rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo console-font">UHDC.io</a>
+            <div class="nav-links console-font">
+                <a href="index.html">HOME</a>
+                <a href="about.html">ABOUT</a>
+                <a href="tools.html">TOOLS</a>
+                <a href="governance.html">GOVERNANCE</a>
+                <a href="https://github.com/bobbyburnsy" target="_blank" class="btn-nav">GITHUB REPO</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <p class="console-font" style="color: var(--text-muted); margin-bottom: 0.5rem;">\Tools\BookmarkBackup.ps1</p>
+            <h1>BookmarkBackup.ps1</h1>
+            <p class="console-font highlight">>>> DATA PRESERVATION & EXTRACTION</p>
+        </header>
+
+        <section style="padding-top: 1rem; border-bottom: none;">
+            <div class="terminal-box console-font">
+                <p style="color: var(--text-main);">========================================================</p>
+                <p style="color: var(--text-main);"> [UHDC] REMOTE BOOKMARK BACKUP UTILITY</p>
+                <p style="color: var(--text-main); margin-bottom: 1.5rem;">========================================================</p>
+
+                <p style="color: var(--text-main);"> [UHDC] Connecting to hidden administrative share (\\LAPTOP-US-4829\c$)...</p>
+                <p style="color: var(--text-muted);">  > [OK] Chrome Bookmarks successfully secured.</p>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">  > [OK] Edge Bookmarks successfully secured.</p>
+
+                <p style="color: var(--neon-blue);">[UHDC SUCCESS] Backup complete! Opening local destination folder...</p>
+                <p style="color: var(--text-muted);">> C:\UHDC\Bookmarks\LAPTOP-US-4829-jsmith-20260225-1422</p>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">IT Pro Summary</h2>
+            <p>This is a targeted data preservation tool designed to act as a safety net before performing destructive administrative actions. It bypasses WinRM entirely, utilizing the SMB protocol to connect to the remote endpoint's hidden <code>C$</code> administrative share. It extracts the raw SQLite bookmark files for both Google Chrome and Microsoft Edge, saving them to a timestamped local directory for safekeeping.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">When to Use This Tool</h2>
+
+            <h3>The Scenario</h3>
+            <p>You are on a call with a user whose Windows profile has become completely corrupted, or they are scheduled to receive a hardware replacement (PC swap) today. The user is panicking because they have hundreds of critical, work-related bookmarks saved locally to their browser, and they are not signed into a cloud-sync account (like an Enterprise Microsoft or Google account).</p>
+
+            <h3>The Fix</h3>
+            <p>Before you delete their profile or tell them to shut down their old PC, you click "Bkmk Backup" in the UHDC. The script instantly reaches across the network, grabs the bookmark files, and saves them to your local <code>C:\UHDC\Bookmarks</code> folder. You can now confidently proceed with the profile rebuild or PC swap, knowing you have a secure copy of their data ready to inject into their new setup.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">Interactive Training Engine</h2>
+            <p>When a junior technician runs this tool with <strong>Training Mode</strong> enabled, the UHDC pauses execution at each critical phase. It displays a pop-up explaining <em>why</em> the action is necessary, what the in-person equivalent would be, and reveals the exact PowerShell code being executed under the hood. Here is what the trainee sees during a Bookmark Backup:</p>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 1: SECURE CHROME BOOKMARKS</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>We are accessing the remote computer's hidden C$ administrative share to copy the user's Google Chrome Bookmarks file directly over the network to our local machine.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>If you were physically at the user's desk, you would open File Explorer, type '%LocalAppData%\Google\Chrome\User Data\Default' into the address bar, copy the file named 'Bookmarks', and save it to a flash drive or network share.</p>
+                <div class="training-code console-font">Copy-Item '\\$Target\c$\Users\$TargetUser\AppData\Local\Google\Chrome\User Data\Default\Bookmarks' -Destination '$destFolder\Chrome_Bookmarks' -Force</div>
+            </div>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 2: SECURE EDGE BOOKMARKS</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>We are repeating the process for Microsoft Edge, which stores its user data in a similar Chromium-based directory structure.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>If you were physically at the user's desk, you would navigate to '%LocalAppData%\Microsoft\Edge\User Data\Default', copy the 'Bookmarks' file, and save it alongside the Chrome backup.</p>
+                <div class="training-code console-font">Copy-Item '\\$Target\c$\Users\$TargetUser\AppData\Local\Microsoft\Edge\User Data\Default\Bookmarks' -Destination '$destFolder\Edge_Bookmarks' -Force</div>
+            </div>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 3: VERIFY BACKUP</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>We are launching File Explorer on your local machine and using the '/select' argument to automatically highlight the newly created backup folder.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>If you were at the user's desk, you would open the flash drive or network share to visually confirm the files were successfully copied before proceeding with any destructive actions (like a profile reset or PC swap).</p>
+                <div class="training-code console-font">Start-Process explorer.exe -ArgumentList "/select,\`"$destFolder\`""</div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">Technical Execution Pipeline</h2>
+            <ol>
+                <li><strong>Pre-Execution Validation:</strong> Executes a fast ICMP Ping to verify endpoint connectivity. If the AD Username box is blank, it spawns a GUI input box to request the target user's name.</li>
+                <li><strong>Directory Generation:</strong> Creates a local, timestamped destination folder (e.g., <code>C:\UHDC\Bookmarks\LAPTOP-US-4829-jsmith-20260225-1422</code>) to ensure backups are never overwritten.</li>
+                <li><strong>SMB Extraction:</strong> Connects to the remote endpoint via <strong>Port 445 (SMB)</strong> using the <code>C$</code> share. It explicitly targets the <code>AppData\Local</code> paths for both Chrome and Edge, copying the files locally.</li>
+                <li><strong>Shell Handoff:</strong> Executes <code>explorer.exe</code> with the <code>/select</code> argument, breaking out of the PowerShell runspace to visually highlight the newly created backup folder for the technician.</li>
+                <li><strong>Audit Logging:</strong> Logs the successful extraction to the central UHDC CSV database.</li>
+            </ol>
+        </section>
+
+        <section style="border-bottom: none;">
+            <h2 class="console-font">Q&A</h2>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Why use SMB instead of WinRM for this tool?</div>
+                <div class="qa-answer">While WinRM is excellent for executing commands, transferring files over WinRM can be slow and memory-intensive because the data has to be serialized and deserialized through the HTTP pipeline. SMB (Port 445) is the native Windows file-sharing protocol, making it significantly faster and more reliable for raw data extraction.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Does this backup the user's saved passwords or browsing history?</div>
+                <div class="qa-answer">No. It only backs up the <code>Bookmarks</code> file. Saved passwords in Chromium browsers are encrypted using the user's unique Windows DPAPI (Data Protection API) key. You cannot simply copy a password file from one PC to another; it will be unreadable. If a user needs their passwords transferred, they must sign into a browser sync profile.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: What does the `/select` argument do in the final step?</div>
+                <div class="qa-answer">When you run <code>explorer.exe "C:\Folder"</code>, Windows opens that folder. When you run <code>explorer.exe /select,"C:\Folder"</code>, Windows opens the <em>parent</em> directory (the C: drive) and automatically highlights the specific folder. This is a quality-of-life feature that saves the technician from having to hunt for the newly created backup among dozens of other files.</div>
+            </div>
+        </section>
+    </div>
+
+</body>
+</html>

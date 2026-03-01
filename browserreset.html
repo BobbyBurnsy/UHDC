@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UHDC Tools | BrowserReset.ps1</title>
+    <style>
+        /* CORE VARIABLES & RESET */
+        :root {
+            --bg-dark: #1E1E1E;
+            --bg-darker: #111111;
+            --neon-green: #00FF00;
+            --neon-blue: #00A2ED;
+            --text-main: #DDDDDD;
+            --text-muted: #888888;
+            --border-color: #333333;
+            --danger-red: #FF4444;
+            --training-gold: #FFD700;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        .console-font {
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        /* NAVIGATION BAR */
+        nav {
+            background-color: var(--bg-darker);
+            border-bottom: 1px solid var(--neon-blue);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .nav-logo {
+            color: var(--neon-blue);
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--neon-green);
+        }
+
+        /* LAYOUT & CONTAINERS */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            padding: 3rem 0 2rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        section {
+            padding: 2.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* TYPOGRAPHY & ACCENTS */
+        h1 {
+            font-size: 2.5rem;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--neon-green);
+            margin-bottom: 1.2rem;
+            font-weight: normal;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: #FFFFFF;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid var(--neon-blue);
+            padding-left: 10px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 1.2rem;
+            color: #CCCCCC;
+        }
+
+        strong {
+            color: #FFFFFF;
+        }
+
+        ul, ol {
+            margin-bottom: 1.5rem;
+            margin-left: 2rem;
+            color: #CCCCCC;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .highlight { color: var(--neon-green); }
+        .danger { color: var(--danger-red); font-weight: bold; }
+
+        /* TERMINAL WINDOW EFFECT */
+        .terminal-box {
+            background-color: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--neon-blue);
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin: 1.5rem 0;
+        }
+
+        .terminal-box p {
+            margin-bottom: 0.5rem;
+            font-size: 1.05rem;
+        }
+
+        /* TRAINING BLOCKS */
+        .training-block {
+            background-color: #1A1A1A;
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--training-gold);
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+        }
+
+        .training-header {
+            color: var(--training-gold);
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .training-code {
+            background-color: #0C0C0C;
+            color: var(--neon-green);
+            padding: 1rem;
+            border: 1px solid #333;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            overflow-x: auto;
+        }
+
+        /* QA BLOCKS */
+        .qa-block {
+            background-color: #252526;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            border-left: 3px solid var(--neon-green);
+        }
+
+        .qa-question {
+            font-weight: bold;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+            font-size: 1.15rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo console-font">UHDC.io</a>
+            <div class="nav-links console-font">
+                <a href="index.html">HOME</a>
+                <a href="about.html">ABOUT</a>
+                <a href="tools.html">TOOLS</a>
+                <a href="governance.html">GOVERNANCE</a>
+                <a href="https://github.com/bobbyburnsy" target="_blank" class="btn-nav">GITHUB REPO</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <p class="console-font" style="color: var(--text-muted); margin-bottom: 0.5rem;">\Tools\BrowserReset.ps1</p>
+            <h1>BrowserReset.ps1</h1>
+            <p class="console-font highlight">>>> BROWSER PROFILE REMEDIATION</p>
+        </header>
+
+        <section style="padding-top: 1rem; border-bottom: none;">
+            <div class="terminal-box console-font">
+                <p style="color: var(--text-main);">==========================================================</p>
+                <p style="color: var(--text-main);"> [UHDC] BROWSER PROFILE RESET: LAPTOP-US-4829 / jsmith</p>
+                <p style="color: var(--text-main); margin-bottom: 1.5rem;">==========================================================</p>
+
+                <p style="color: var(--text-main);"> [UHDC] [1/4] Securing user bookmarks...</p>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">  > [OK] 'Bookmarks' safely copied to local backup directory.</p>
+
+                <p style="color: var(--text-main);"> [UHDC] [2/4] Terminating active browser processes...</p>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">  > [OK] chrome.exe and msedge.exe terminated (SYSTEM context).</p>
+
+                <p style="color: var(--text-main);"> [UHDC] [3/4] Purging corrupted AppData profiles...</p>
+                <p style="color: var(--text-muted);">  > [OK] AppData\Local\Google\Chrome\User Data cleared.</p>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">  > [OK] AppData\Local\Microsoft\Edge\User Data cleared.</p>
+
+                <p style="color: var(--text-main);"> [UHDC] [4/4] Restoring bookmarks to fresh profile structure...</p>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">  > [OK] Bookmarks injected into fresh profile paths.</p>
+
+                <p style="color: var(--neon-blue);">[UHDC SUCCESS] jsmith's browsers have been successfully reset on LAPTOP-US-4829.</p>
+                <p style="color: var(--neon-green);">> User bookmarks preserved!</p>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">IT Pro Summary</h2>
+            <p>This is a professional remediation tool designed to instantly resolve deep-rooted web browser corruption. It utilizes SMB to secure a forensic backup of the user's local bookmarks, deploys PsExec to forcefully sever active browser process locks, purges the corrupted AppData profiles, and seamlessly injects the bookmarks back into the newly generated profile directories.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">When to Use This Tool</h2>
+
+            <h3>The Scenario</h3>
+            <p>A user submits a ticket stating their Google Chrome or Microsoft Edge keeps crashing upon opening, or a critical internal web app is throwing continuous graphical errors. A standard cache clear doesn't work. The technician knows they need to completely delete the local browser profile, but if they do that manually, the user will lose all their saved bookmarks and be frustrated.</p>
+
+            <h3>The Fix</h3>
+            <p>The technician ensures both the "Target PC" and "Target User" fields are populated in the UHDC and clicks "Browser Reset." In roughly three seconds, the script reaches across the network, saves the bookmark files, terminates the frozen browser, completely drops the corrupt <code>User Data</code> folder, and restores the bookmarks. The user clicks the Chrome icon on their desktop, the browser opens lightning fast as if it was freshly installed, and all their bookmarks are perfectly intact.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">Interactive Training Engine</h2>
+            <p>When a junior technician runs this tool with <strong>Training Mode</strong> enabled, the UHDC pauses execution at each critical phase. It displays a pop-up explaining <em>why</em> the action is necessary, what the in-person equivalent would be, and reveals the exact PowerShell code being executed under the hood. Here is what the trainee sees during a Browser Reset:</p>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 1: BACKUP BOOKMARKS</div>
+                <p>We are copying the user's Bookmarks file from their remote AppData directory to a safe local backup folder.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>If you were at the user's desk, you would open File Explorer, navigate to <code>%LocalAppData%\Google\Chrome\User Data\Default</code>, copy the 'Bookmarks' file, and paste it to the Desktop for safekeeping.</p>
+                <div class="training-code console-font">Copy-Item '\\$Target\c$\Users\$TargetUser\AppData\Local\Google\Chrome\User Data\Default\Bookmarks' -Destination 'C:\UHDC\Backups\BrowserReset_$Target\Chrome_BM' -Force</div>
+            </div>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 2: TERMINATE BROWSER PROCESSES</div>
+                <p>We must forcefully terminate any running instances of Chrome or Edge. If the browser is open (or running in the background), Windows will lock the AppData files and prevent us from deleting them.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>If you were at the user's desk, you would press Ctrl+Shift+Esc to open Task Manager, locate all 'Google Chrome' and 'Microsoft Edge' processes, right-click them, and select 'End task'.</p>
+                <div class="training-code console-font">psexec.exe \\$Target -s taskkill /F /IM chrome.exe /IM msedge.exe /T</div>
+            </div>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 3: PURGE CORRUPTED PROFILES</div>
+                <p>We are deleting the entire 'User Data' directory for both browsers. This permanently wipes the corrupted cache, cookies, history, and extensions.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>If you were at the user's desk, you would navigate to <code>%LocalAppData%\Google\Chrome\</code> and permanently delete the 'User Data' folder. You would then repeat this for Edge.</p>
+                <div class="training-code console-font">Remove-Item '\\$Target\c$\Users\$TargetUser\AppData\Local\Google\Chrome\User Data' -Recurse -Force</div>
+            </div>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 4: RESTORE BOOKMARKS</div>
+                <p>We are recreating the 'Default' profile directory structure and copying the backed-up Bookmarks file back into place before the user opens the browser again.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>If you were at the user's desk, you would open Chrome once to let it automatically recreate the default folders, close the browser, and then copy the saved 'Bookmarks' file from the Desktop back into the 'Default' folder.</p>
+                <div class="training-code console-font">New-Item -ItemType Directory -Path '\\$Target\c$\Users\$TargetUser\AppData\Local\Google\Chrome\User Data\Default' -Force<br>Copy-Item 'C:\UHDC\Backups\BrowserReset_$Target\Chrome_BM' '\\$Target\...\Default\Bookmarks' -Force</div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">Technical Execution Pipeline</h2>
+            <ol>
+                <li><strong>Data Extraction (SMB):</strong> Bypasses WinRM entirely. Connects to the endpoint via <strong>Port 445 (SMB)</strong> using the hidden <code>C$</code> admin share. It navigates explicitly to <code>\Users\$TargetUser\AppData\Local\...</code> and copies the SQLite `Bookmarks` files to a safe local backup directory. </li>
+                <li><strong>Process Termination (RPC/PsExec):</strong> Deploys <code>PsExec.exe</code> over <strong>Port 135 (RPC)</strong> and <strong>Port 445 (SMB)</strong> to run a remote <code>taskkill /F /IM chrome.exe /T</code> command under the <code>NT AUTHORITY\SYSTEM</code> context. This forcefully drops all active memory and file system locks on the remote browser.</li>
+                <li><strong>Profile Purge (SMB):</strong> Re-utilizes the <code>C$</code> share to execute a <code>Remove-Item -Force -Recurse</code> against the entire <code>\User Data</code> directory for both Edge and Chrome, effectively wiping the corrupted state from the hard drive.</li>
+                <li><strong>Data Restoration (SMB):</strong> Recreates the core directory structure and injects the saved `Bookmarks` files back into the default profile location before the user ever reopens the application.</li>
+                <li><strong>Audit Logging:</strong> Logs the successful execution to the central UHDC CSV database.</li>
+            </ol>
+        </section>
+
+        <section style="border-bottom: none;">
+            <h2 class="console-font">Q&A</h2>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Why do we use PsExec to kill the browser processes instead of a standard WinRM command?</div>
+                <div class="qa-answer">If the user is actively staring at a frozen browser, the processes are locked tightly in their user session. Attempting to kill it via WMI or standard remote PowerShell can sometimes fail or throw access denied errors depending on the execution context. PsExec runs as the <code>SYSTEM</code> account, which gives it absolute authority to terminate the process tree, bypassing all session isolation restrictions. </div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Why does this script require the technician to enter BOTH the Target PC and the Username?</div>
+                <div class="qa-answer">Because it leverages direct SMB file paths (<code>\\TargetPC\C$\Users\Username\AppData...</code>) instead of querying the environmental variables of the remote machine. It needs the specific AD username to build the correct network path to extract the bookmarks.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Will the user lose their saved passwords or browser extensions?</div>
+                <div class="qa-answer">Yes, any locally cached data outside of bookmarks (like history, extensions, and local passwords) is purged. However, if the user is signed into Google Sync or Microsoft Enterprise Sync, their extensions and passwords will automatically pull back down from the cloud the moment they reopen the browser. This script specifically rescues the <em>local</em> bookmarks for users who do not utilize cloud sync.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Can this be run while the user is actively working?</div>
+                <div class="qa-answer">It can, but the user will see their browser suddenly vanish from their screen. It is best practice to send them a quick "Net Send" message via the console or call them to say, "I am going to quickly reset your browser now" before clicking the button.</div>
+            </div>
+        </section>
+    </div>
+
+</body>
+</html>

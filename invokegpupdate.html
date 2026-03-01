@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UHDC Tools | Invoke-GPUpdate.ps1</title>
+    <style>
+        /* CORE VARIABLES & RESET */
+        :root {
+            --bg-dark: #1E1E1E;
+            --bg-darker: #111111;
+            --neon-green: #00FF00;
+            --neon-blue: #00A2ED;
+            --text-main: #DDDDDD;
+            --text-muted: #888888;
+            --border-color: #333333;
+            --danger-red: #FF4444;
+            --warning-yellow: #FFD700;
+            --training-gold: #FFD700;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        .console-font {
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        /* NAVIGATION BAR */
+        nav {
+            background-color: var(--bg-darker);
+            border-bottom: 1px solid var(--neon-blue);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .nav-logo {
+            color: var(--neon-blue);
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--neon-green);
+        }
+
+        /* LAYOUT & CONTAINERS */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            padding: 3rem 0 2rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        section {
+            padding: 2.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* TYPOGRAPHY & ACCENTS */
+        h1 {
+            font-size: 2.5rem;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--neon-green);
+            margin-bottom: 1.2rem;
+            font-weight: normal;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: #FFFFFF;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid var(--neon-blue);
+            padding-left: 10px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 1.2rem;
+            color: #CCCCCC;
+        }
+
+        strong {
+            color: #FFFFFF;
+        }
+
+        ul, ol {
+            margin-bottom: 1.5rem;
+            margin-left: 2rem;
+            color: #CCCCCC;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .highlight { color: var(--neon-green); }
+        .danger { color: var(--danger-red); font-weight: bold; }
+        .warning { color: var(--warning-yellow); }
+
+        /* TERMINAL WINDOW EFFECT */
+        .terminal-box {
+            background-color: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--neon-blue);
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin: 1.5rem 0;
+        }
+
+        .terminal-box p {
+            margin-bottom: 0.5rem;
+            font-size: 1.05rem;
+        }
+
+        /* TRAINING BLOCKS */
+        .training-block {
+            background-color: #1A1A1A;
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--training-gold);
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+        }
+
+        .training-header {
+            color: var(--training-gold);
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .training-code {
+            background-color: #0C0C0C;
+            color: var(--neon-green);
+            padding: 1rem;
+            border: 1px solid #333;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            overflow-x: auto;
+        }
+
+        /* QA BLOCKS */
+        .qa-block {
+            background-color: #252526;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            border-left: 3px solid var(--neon-green);
+        }
+
+        .qa-question {
+            font-weight: bold;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+            font-size: 1.15rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo console-font">UHDC.io</a>
+            <div class="nav-links console-font">
+                <a href="index.html">HOME</a>
+                <a href="about.html">ABOUT</a>
+                <a href="tools.html">TOOLS</a>
+                <a href="governance.html">GOVERNANCE</a>
+                <a href="https://github.com/bobbyburnsy" target="_blank" class="btn-nav">GITHUB REPO</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <p class="console-font" style="color: var(--text-muted); margin-bottom: 0.5rem;">\Tools\Invoke-GPUpdate.ps1</p>
+            <h1>Invoke-GPUpdate.ps1</h1>
+            <p class="console-font highlight">>>> POLICY ADMINISTRATION</p>
+        </header>
+
+        <section style="padding-top: 1rem; border-bottom: none;">
+            <div class="terminal-box console-font">
+                <p style="color: var(--text-main);">========================================</p>
+                <p style="color: var(--text-main);"> [UHDC] FORCE GPUPDATE: LAPTOP-US-4829</p>
+                <p style="color: var(--text-main); margin-bottom: 1.5rem;">========================================</p>
+
+                <p style="color: var(--text-main);"> [UHDC] [i] Connecting to LAPTOP-US-4829 via WinRM...</p>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">  > [UHDC] Running gpupdate /force /target:computer...</p>
+
+                <p style="color: var(--neon-blue);">[UHDC SUCCESS] Computer policy update triggered successfully!</p>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">IT Pro Summary</h2>
+            <p>This is a targeted administrative tool that leverages WinRM to force an immediate Group Policy refresh on a remote endpoint. It is specifically optimized with non-blocking arguments to ensure the technician's console remains responsive, bypassing the standard 90-minute background refresh cycle enforced by Active Directory.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">When to Use This Tool</h2>
+
+            <h3>The Scenario</h3>
+            <p>A user calls because they are missing a newly deployed mapped network drive, or a security team just pushed an emergency firewall rule that needs to apply immediately. You don't want to ask the user to open a command prompt and type commands, and you certainly don't want to wait up to 90 minutes for Windows to check in with the Domain Controller naturally.</p>
+
+            <h3>The Fix</h3>
+            <p>While on the phone, the technician clicks "Force GPUpdate" in the UHDC. The script reaches out and triggers the policy engine in the background. Within seconds, the new drive maps appear in the user's File Explorer, or the new security policy takes effect, resolving the issue instantly without interrupting their workflow.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">Interactive Training Engine</h2>
+            <p>When a junior technician runs this tool with <strong>Training Mode</strong> enabled, the UHDC pauses execution at each critical phase. It displays a pop-up explaining <em>why</em> the action is necessary, what the in-person equivalent would be, and reveals the exact PowerShell code being executed under the hood. Here is what the trainee sees during a GPUpdate:</p>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 1: FORCE GROUP POLICY UPDATE</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>Use this when a user is missing mapped network drives, hasn't received a newly deployed software package, or when a new security policy (like a firewall rule or LAPS configuration) needs to be applied immediately without waiting for the standard 90-minute background refresh cycle.</p>
+                <p><strong>WHAT IT DOES:</strong><br>We are establishing a remote WinRM session to execute the native Windows 'gpupdate' utility. We use the '/force' flag to reapply all policies (not just changed ones), '/target:computer' to limit the scope and speed it up, and '/wait:0' to ensure the command returns instantly without hanging our console if a policy requires a reboot.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>If you were physically at the user's desk, you would open an elevated Command Prompt, type 'gpupdate /force', and wait for the 'Computer Policy update has completed successfully' message.</p>
+                <div class="training-code console-font">Invoke-Command -ComputerName $Target -ScriptBlock { gpupdate /force /target:computer /wait:0 }</div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">Technical Execution Pipeline</h2>
+            <ol>
+                <li><strong>Pre-Execution Validation:</strong> Executes a fast ICMP Ping to verify endpoint connectivity before attempting WinRM connections.</li>
+                <li><strong>Remote Execution (WinRM):</strong> Establishes a remote PowerShell session over <strong>Port 5985 (HTTP)</strong>.</li>
+                <li><strong>Policy Engine Trigger:</strong> Executes the native <code>gpupdate.exe</code> utility. It passes the <code>/force</code> flag to ignore optimization checks and re-download all applicable GPOs from the SYSVOL share.</li>
+                <li><strong>Asynchronous Detachment:</strong> It passes the <code>/wait:0</code> flag. This is critical for remote execution, as it forces the executable to return control to the PowerShell pipeline immediately, rather than waiting for the policy processing to finish.</li>
+                <li><strong>Audit Logging:</strong> Logs the successful execution to the central UHDC CSV database via SMB (<strong>Port 445</strong>).</li>
+            </ol>
+        </section>
+
+        <section style="border-bottom: none;">
+            <h2 class="console-font">Q&A</h2>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Why is the `/wait:0` flag so important?</div>
+                <div class="qa-answer">If a Group Policy update includes a software installation or a core system change, <code>gpupdate</code> will prompt the user (or the hidden background session) with "Certain policies require a reboot... Do you want to restart now (Y/N)?". If this happens over WinRM without <code>/wait:0</code>, the PowerShell pipeline will hang indefinitely waiting for an answer, freezing the UHDC. <code>/wait:0</code> forces the command to return control to the console immediately without waiting for the policy engine to finish processing.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Why does it use `/target:computer` instead of updating both User and Computer policies?</div>
+                <div class="qa-answer">Speed and reliability. User policies are often tied to the specific user's active session token. Running a full <code>gpupdate</code> as a background administrator via WinRM can sometimes fail to apply User-targeted policies correctly because it executes in Session 0. Targeting just the Computer policy ensures system-level changes (like LAPS, firewall rules, and machine-targeted software) apply cleanly and rapidly.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Will this force the user's computer to reboot?</div>
+                <div class="qa-answer">No. Even if a policy requires a reboot to take effect, running it silently in the background with the <code>/wait:0</code> flag will simply queue the policy to apply the next time the user naturally restarts their machine. It will not interrupt their current session.</div>
+            </div>
+        </section>
+    </div>
+
+</body>
+</html>

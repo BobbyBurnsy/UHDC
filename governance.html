@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UHDC | Governance & Security</title>
+    <style>
+        /* CORE VARIABLES & RESET */
+        :root {
+            --bg-dark: #1E1E1E;
+            --bg-darker: #111111;
+            --neon-green: #00FF00;
+            --neon-blue: #00A2ED;
+            --text-main: #DDDDDD;
+            --text-muted: #888888;
+            --border-color: #333333;
+            --danger-red: #FF4444;
+            --accent-purple: #B366FF;
+            --training-gold: #FFD700;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        .console-font {
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        /* NAVIGATION BAR */
+        nav {
+            background-color: var(--bg-darker);
+            border-bottom: 1px solid var(--neon-blue);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .nav-logo {
+            color: var(--neon-blue);
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--neon-green);
+        }
+
+        .nav-links .btn-nav {
+            border: 1px solid var(--neon-blue);
+            padding: 0.4rem 1rem;
+            border-radius: 4px;
+            color: var(--neon-blue);
+            transition: all 0.2s ease;
+        }
+
+        .nav-links .btn-nav:hover {
+            background-color: var(--neon-blue);
+            color: var(--bg-dark);
+            box-shadow: 0 0 10px rgba(0, 162, 237, 0.5);
+        }
+
+        /* LAYOUT & CONTAINERS */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            padding: 4rem 0 2rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        section {
+            padding: 3rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* TYPOGRAPHY & ACCENTS */
+        h1 {
+            font-size: 3rem;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: 2rem;
+            color: var(--neon-green);
+            margin-bottom: 1.5rem;
+            font-weight: normal;
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            color: #FFFFFF;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            border-left: 3px solid var(--neon-blue);
+            padding-left: 10px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+            color: #CCCCCC;
+        }
+
+        strong {
+            color: #FFFFFF;
+        }
+
+        ul, ol {
+            margin-bottom: 1.5rem;
+            margin-left: 2rem;
+            color: #CCCCCC;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .highlight { color: var(--neon-green); }
+        .danger { color: var(--danger-red); font-weight: bold; }
+
+        /* TABLES */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background-color: var(--bg-darker);
+            border: 1px solid var(--border-color);
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            color: var(--neon-blue);
+            font-family: 'Consolas', monospace;
+            font-size: 1.1rem;
+            border-bottom: 2px solid var(--neon-blue);
+        }
+
+        tr:hover {
+            background-color: #1a1a1a;
+        }
+
+        td:first-child {
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        /* TERMINAL WINDOW EFFECT */
+        .terminal-box {
+            background-color: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--neon-green);
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin: 2rem 0;
+        }
+
+        /* FOOTER */
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo console-font">UHDC.io</a>
+            <div class="nav-links console-font">
+                <a href="index.html">HOME</a>
+                <a href="about.html">ABOUT</a>
+                <a href="tools.html">TOOLS</a>
+                <a href="governance.html" class="active">GOVERNANCE</a>
+                <a href="https://github.com/bobbyburnsy" target="_blank" class="btn-nav">GITHUB REPO</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>Security &amp; Governance.</h1>
+            <p class="console-font highlight">>>> UHDC RISK MANAGEMENT FRAMEWORK v2.0</p>
+        </header>
+
+        <section>
+            <h2 class="console-font">1. Architectural Philosophy and Scope</h2>
+            <p>The Unified Help Desk Console (UHDC) is predicated on the strategic imperative of <strong>rapid live-call resolution</strong>. It empowers Tier 1 and Tier 2 technicians to execute complex diagnostic and remediation tasks instantly, without putting users on hold to navigate fragmented web portals. However, from a governance perspective, providing junior staff with high-level PowerShell orchestration mandates a centralized framework with rigorous administrative guardrails.</p>
+            <p>This framework ensures that administrative power is tempered by absolute accountability and education, preventing the tool from becoming a "shadow IT" risk. The scope encompasses the primary internal stakeholders (IT Administrators and Technicians) and the broader technological ecosystem, including on-premises Active Directory (AD), Entra ID/Intune cloud environments, and the modular UHDC toolkit.</p>
+
+            <div class="terminal-box console-font">
+                <p style="color: var(--neon-blue);">[UHDC DATA SOVEREIGNTY]</p>
+                <p style="color: var(--text-muted);">> The platform aligns operational efficiency with strict data sovereignty.</p>
+                <p style="color: var(--text-muted);">> The framework contains <span style="color: var(--neon-green);">ZERO hidden telemetry</span>, ensuring all organizational execution data, asset maps, and audit logs remain exclusively within the tenant’s controlled environment.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">2. Mitigating "Black Box" Automation Risk</h2>
+            <p>A significant risk in modern IT environments is the deployment of "black box" GUI tools that abstract away the underlying technology. When technicians simply click buttons without understanding the mechanics, they become dependent on the tool and are unable to troubleshoot when edge cases arise. This creates a single point of failure in human capital.</p>
+            <p>The UHDC mitigates this risk via its <strong>Interactive Training Engine</strong>. When a trainee utilizes the console, execution is paused at critical phases to display the exact PowerShell cmdlets, WMI queries, or Graph API REST calls being executed in the background. By explicitly mapping the automated action to its "In-Person Equivalent," the console ensures that technicians are actively upskilled and understand the precise impact of their actions on the enterprise environment.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">3. Identity-First RBAC &amp; Graph API Integration</h2>
+            <p>A core tenet of the UHDC architecture is the elimination of secondary credential silos. Every additional identity provider increases the organizational attack surface. Consequently, the UHDC utilizes an <strong>"Identity-First"</strong> approach, integrating directly with existing enterprise identity providers (Entra ID and Active Directory).</p>
+            <p>Role-Based Access Control (RBAC) is enforced natively. For cloud operations, the <code>IntuneMenu.ps1</code> engine utilizes pass-through authentication via <code>Connect-MgGraph</code>. The console ensures that Graph API requests are only authorized if the technician possesses the corresponding rights within the Microsoft portal.</p>
+
+            <h3>UHDC Access Hierarchy &amp; Authorization</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Administrative Action</th>
+                        <th>Integration Method</th>
+                        <th>Required Graph API Scopes / Protocol</th>
+                        <th>Network Ports</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Remote Wipe / Device Lock</td>
+                        <td>Microsoft Graph API</td>
+                        <td class="console-font">DeviceManagementManagedDevices.ReadWrite.All</td>
+                        <td>443 (HTTPS)</td>
+                    </tr>
+                    <tr>
+                        <td>MFA Reset / Add SMS</td>
+                        <td>Microsoft Graph API</td>
+                        <td class="console-font">UserAuthenticationMethod.ReadWrite.All</td>
+                        <td>443 (HTTPS)</td>
+                    </tr>
+                    <tr>
+                        <td>BitLocker Key Retrieval</td>
+                        <td>Microsoft Graph API</td>
+                        <td class="console-font">BitlockerKey.Read.All</td>
+                        <td>443 (HTTPS)</td>
+                    </tr>
+                    <tr>
+                        <td>Cloud LAPS Retrieval</td>
+                        <td>Graph API (Beta)</td>
+                        <td class="console-font">DeviceLocalCredential.Read.All</td>
+                        <td>443 (HTTPS)</td>
+                    </tr>
+                    <tr>
+                        <td>Account Unlock / Reset</td>
+                        <td>Active Directory</td>
+                        <td class="console-font">LDAP / AD Permissions</td>
+                        <td>389/636 (LDAP/S)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>To mitigate the risk of cross-tenant data leakage in multi-agency environments, the framework employs <strong>Dynamic Domain Filtration</strong>. The engine programmatically extracts the technician’s User Principal Name (UPN) to mathematically restrict AD and Graph searches to the technician’s specific organizational unit, effectively partitioning data before it reaches the UI.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">4. Sensitive Credential Handling &amp; Extraction</h2>
+            <p>The management of BitLocker recovery keys and Local Administrator Password Solution (LAPS) credentials represents a high-impact security risk. Traditional help desk workflows—often relying on manual "copy-paste" handling—are prone to documentation gaps and insecure credential caching.</p>
+
+            <p>The UHDC framework mandates an immutable, intercept-based audit protocol. It programmatically stamps the technician’s identity, the target hardware ID, and a high-resolution timestamp into the central audit log the moment a credential is requested. Furthermore, the transition from "Manual Interrogation" to "Automatic Mapping" via the <code>SmartUserSearch.ps1</code> engine mitigates social engineering risks. Technicians no longer require users to provide hostnames—a process easily spoofed; instead, the system verifies the user-to-device relationship automatically.</p>
+
+            <h3>Cloud LAPS Extraction Sequence</h3>
+            <p>For Cloud LAPS retrieval, the UHDC utilizes <code>Invoke-MgGraphRequest</code> to target Graph Beta Endpoints, responding to the unreliability of standard PowerShell SDK cmdlets for sensitive payloads. The process follows a strict sequence:</p>
+            <ol>
+                <li><strong>Identity Validation:</strong> Enforces pass-through credential verification via <code>Connect-MgGraph</code>.</li>
+                <li><strong>Direct URI Dispatch:</strong> Executes a raw GET request to the specific LAPS Beta URI to ensure payload precision.</li>
+                <li><strong>Encrypted Extraction:</strong> Retrieves the credential directly into the console memory, bypassing local disk caching entirely.</li>
+            </ol>
+        </section>
+
+        <section>
+            <h2 class="console-font">5. Audit Logging and Forensic Accountability</h2>
+            <p>Immutable audit trails are a fundamental requirement for legal compliance and internal forensic review. The UHDC architecture ensures every execution—from a "Browser Reset" to a "Software Deployment"—is piped into a centralized, timestamped CSV database via SMB (Port 445).</p>
+            <p>For incident response, <code>Get-EventLogs.ps1</code> enables rapid forensic retrieval. The tool utilizes an "architectural balance" by limiting the search to a 10,000-event buffer to prevent memory spikes and UI lockups over RPC. Forensic data is presented via a "Heads Up Display" (HUD) for immediate technician review while the full dataset is exported to a local CSV for deep analysis.</p>
+
+            <h3>Critical Forensic Port Requirements:</h3>
+            <ul>
+                <li><span class="console-font highlight">Port 135 (RPC):</span> Native Windows Event Log queries and process management (PsExec).</li>
+                <li><span class="console-font highlight">Ports 49152-65535:</span> Critical range for high-port ephemeral communication required by Get-WinEvent.</li>
+                <li><span class="console-font highlight">Port 445 (SMB):</span> Facilitates writing execution data to the central audit share and extracting raw files.</li>
+                <li><span class="console-font highlight">Port 5985 (WinRM):</span> Remote telemetry gathering and CIM/WMI queries.</li>
+            </ul>
+        </section>
+
+        <section style="border-bottom: none;">
+            <h2 class="console-font">6. Operational Safety and Concurrency</h2>
+            <p>Operational governance is achieved through strict session isolation and asynchronous execution. Tools like "Remote Install" and "Deep Clean" utilize PsExec under the <code>NT AUTHORITY\SYSTEM</code> context. This choice is strategically designed to solve the <strong>"Double-Hop"</strong> problem; by executing as SYSTEM, the target machine authenticates to the network as its computer account (<code>DOMAIN\COMPUTER$</code>), allowing it to pull installers from shares that standard WinRM sessions cannot reach, while keeping the execution completely hidden from the user in Session 0.</p>
+
+            <p>To ensure data integrity, the <code>GlobalNetworkMap.ps1</code> engine employs an <strong>Atomic Save</strong> operation. The script executes a save every 50 loops, writing to a temporary <code>.tmp</code> file and performing a byte-length health check before instantly swapping it with the live JSON database. This prevents database corruption during network drops and ensures a <code>.bak</code> duplicate is always available for recovery.</p>
+
+            <p>Finally, the UHDC utilizes <strong>Runspace Pools</strong>. This multi-threaded architecture ensures the graphical interface remains responsive while background threads handle intensive tasks like network scans or remote deployments. This ensures the technician remains in control of the console at all times, raising the floor of IT capability while significantly lowering the organizational risk profile.</p>
+        </section>
+    </div>
+
+    <footer>
+        <p class="console-font">2026 Unified Help Desk Console. Engineered for Enterprise IT.</p>
+    </footer>
+
+</body>
+</html>

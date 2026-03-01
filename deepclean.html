@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UHDC Tools | DeepClean.ps1</title>
+    <style>
+        /* CORE VARIABLES & RESET */
+        :root {
+            --bg-dark: #1E1E1E;
+            --bg-darker: #111111;
+            --neon-green: #00FF00;
+            --neon-blue: #00A2ED;
+            --text-main: #DDDDDD;
+            --text-muted: #888888;
+            --border-color: #333333;
+            --danger-red: #FF4444;
+            --training-gold: #FFD700;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        .console-font {
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        /* NAVIGATION BAR */
+        nav {
+            background-color: var(--bg-darker);
+            border-bottom: 1px solid var(--neon-blue);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .nav-logo {
+            color: var(--neon-blue);
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--neon-green);
+        }
+
+        /* LAYOUT & CONTAINERS */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            padding: 3rem 0 2rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        section {
+            padding: 2.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* TYPOGRAPHY & ACCENTS */
+        h1 {
+            font-size: 2.5rem;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--neon-green);
+            margin-bottom: 1.2rem;
+            font-weight: normal;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: #FFFFFF;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid var(--neon-blue);
+            padding-left: 10px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 1.2rem;
+            color: #CCCCCC;
+        }
+
+        strong {
+            color: #FFFFFF;
+        }
+
+        ul, ol {
+            margin-bottom: 1.5rem;
+            margin-left: 2rem;
+            color: #CCCCCC;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .highlight { color: var(--neon-green); }
+        .danger { color: var(--danger-red); font-weight: bold; }
+
+        /* TERMINAL WINDOW EFFECT */
+        .terminal-box {
+            background-color: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--neon-blue);
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin: 1.5rem 0;
+        }
+
+        .terminal-box p {
+            margin-bottom: 0.5rem;
+            font-size: 1.05rem;
+        }
+
+        /* TRAINING BLOCKS */
+        .training-block {
+            background-color: #1A1A1A;
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--training-gold);
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+        }
+
+        .training-header {
+            color: var(--training-gold);
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .training-code {
+            background-color: #0C0C0C;
+            color: var(--neon-green);
+            padding: 1rem;
+            border: 1px solid #333;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            overflow-x: auto;
+        }
+
+        /* QA BLOCKS */
+        .qa-block {
+            background-color: #252526;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            border-left: 3px solid var(--neon-green);
+        }
+
+        .qa-question {
+            font-weight: bold;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+            font-size: 1.15rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo console-font">UHDC.io</a>
+            <div class="nav-links console-font">
+                <a href="index.html">HOME</a>
+                <a href="about.html">ABOUT</a>
+                <a href="tools.html">TOOLS</a>
+                <a href="governance.html">GOVERNANCE</a>
+                <a href="https://github.com/bobbyburnsy" target="_blank" class="btn-nav">GITHUB REPO</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <p class="console-font" style="color: var(--text-muted); margin-bottom: 0.5rem;">\Tools\DeepClean.ps1</p>
+            <h1>DeepClean.ps1</h1>
+            <p class="console-font highlight">>>> ENDPOINT CACHE & STORAGE REMEDIATION</p>
+        </header>
+
+        <section style="padding-top: 1rem; border-bottom: none;">
+            <div class="terminal-box console-font">
+                <p style="color: var(--text-main);">========================================</p>
+                <p style="color: var(--text-main);"> [UHDC] REMOTE DEEP CLEANUP UTILITY</p>
+                <p style="color: var(--text-main); margin-bottom: 1.5rem;">========================================</p>
+
+                <p style="color: var(--text-main);"> [UHDC] [1/3] Clearing & Rebuilding MECM (SCCM) Cache...</p>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">  > [OK] CCMCache purged and rebuilt.</p>
+
+                <p style="color: var(--text-main);"> [UHDC] [2/3] Emptying Temp Folders & Recycle Bin...</p>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">  > [OK] System Temp, User Temp, and Recycle Bin zeroed out.</p>
+
+                <p style="color: var(--text-main);"> [UHDC] [3/3] Triggering Disk Cleanup (Sagerun)...</p>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">  > [OK] Disk Cleanup job dispatched to background.</p>
+
+                <p style="color: var(--neon-blue);">[UHDC SUCCESS] Deep Clean complete on LAPTOP-US-4829.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">IT Pro Summary</h2>
+            <p>This tool is a comprehensive remote endpoint cleanup script. It executes a synchronized local and remote pipeline to recover storage space and resolve stale cache issues without disrupting the active user. It handles system-level cache rebuilds, recursive temp file deletion, and dispatches native Windows cleanup utilities asynchronously.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">When to Use This Tool</h2>
+
+            <h3>The Scenario</h3>
+            <p>A user calls the help desk complaining that their computer is running incredibly slow, or a new software deployment via MECM/SCCM is repeatedly failing with a "Hash Mismatch" or "Insufficient Disk Space" error.</p>
+
+            <h3>The Fix</h3>
+            <p>The technician clicks "Deep Clean." The script immediately purges and rebuilds the corrupted SCCM cache so the software can redownload cleanly. It then wipes out gigabytes of bloated system temp files, user temp files, and empties the Recycle Bin. Finally, it triggers a silent Windows Disk Cleanup job in the background to handle legacy Windows Update payloads. It resolves the SCCM deployment failure and restores performance to the endpoint in a single click.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">Interactive Training Engine</h2>
+            <p>When a junior technician runs this tool with <strong>Training Mode</strong> enabled, the UHDC pauses execution at each critical phase. It displays a pop-up explaining <em>why</em> the action is necessary, what the in-person equivalent would be, and reveals the exact PowerShell code being executed under the hood. Here is what the trainee sees during a Deep Clean:</p>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 1: PURGE MECM (SCCM) CACHE</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>Use this when Software Center deployments are stuck at 0%, failing with 'hash mismatch' errors, or when the C: drive is critically low on space due to large cached application installers.</p>
+                <p><strong>WHAT IT DOES:</strong><br>We are using PsExec (running as the SYSTEM account) to forcefully delete and recreate the 'ccmcache' directory, bypassing standard permission blocks.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>Open Control Panel > Configuration Manager > Cache tab > Configure Settings > Delete Files.</p>
+                <div class="training-code console-font">psexec.exe \\$Target -s cmd /c "rd /s /q C:\Windows\ccmcache & mkdir C:\Windows\ccmcache"</div>
+            </div>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 2: CLEAR TEMP FOLDERS & RECYCLE BIN</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>Use this when a user is experiencing bizarre application glitches (like Office apps crashing), cannot open certain files, or needs immediate disk space recovery.</p>
+                <p><strong>WHAT IT DOES:</strong><br>We are establishing a WinRM session to recursively delete files in 'C:\Windows\Temp', iterate through every user profile to clear their 'AppData\Local\Temp' folders, and forcefully empty the Recycle Bin.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>Press Win+R, type '%temp%', select all files, and delete. Repeat for 'C:\Windows\Temp'. Finally, right-click the Recycle Bin on the desktop and select 'Empty Recycle Bin'.</p>
+                <div class="training-code console-font">Invoke-Command -ComputerName $Target -ScriptBlock {<br>&nbsp;&nbsp;&nbsp;&nbsp;Remove-Item -Path 'C:\Windows\Temp\*' -Recurse -Force<br>&nbsp;&nbsp;&nbsp;&nbsp;Remove-Item -Path 'C:\Users\*\AppData\Local\Temp\*' -Recurse -Force<br>&nbsp;&nbsp;&nbsp;&nbsp;Clear-RecycleBin -Force<br>}</div>
+            </div>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 3: TRIGGER BACKGROUND DISK CLEANUP</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>Use this for general PC maintenance, post-Windows Update cleanup, or to safely remove old Windows installation files (Windows.old) without interrupting the user.</p>
+                <p><strong>WHAT IT DOES:</strong><br>We are remotely triggering the native Windows Disk Cleanup utility ('cleanmgr.exe') using the '/sagerun:1' flag, which runs a pre-configured, silent deep clean in the background.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>Open the Start Menu, search for 'Disk Cleanup', select the C: drive, click 'Clean up system files', check all the boxes, and click OK.</p>
+                <div class="training-code console-font">Invoke-Command -ComputerName $Target -ScriptBlock { Start-Process -FilePath 'cleanmgr.exe' -ArgumentList '/sagerun:1' -WindowStyle Hidden }</div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">Technical Execution Pipeline</h2>
+            <ol>
+                <li><strong>Pre-Execution Validation:</strong> Executes a fast ICMP Ping to verify endpoint connectivity before attempting RPC/WinRM connections.</li>
+                <li><strong>System-Level SCCM Purge:</strong> Deploys PsExec over SMB/RPC (<strong>Ports 445 & 135</strong>) to execute a strict deletion and recreation of <code>C:\Windows\ccmcache</code> running under the <code>NT AUTHORITY\SYSTEM</code> context. This ensures a 100% success rate regardless of local SCCM client health.</li>
+                <li><strong>WinRM Deep Clean:</strong> Establishes a remote PowerShell session (<strong>Port 5985</strong>) to silently and recursively wipe standard system bloat (<code>C:\Windows\Temp</code>).</li>
+                <li><strong>Dynamic Profile Traversal:</strong> Enumerates the <code>C:\Users</code> directory to wipe AppData Temp folders across all existing user profiles, and forcefully empties the Recycle Bin across all drives.</li>
+                <li><strong>Asynchronous Disk Cleanup:</strong> Triggers a pre-configured <code>cleanmgr.exe /sagerun:1</code> process over WinRM. By using <code>Start-Process</code> with a hidden window style, it dispatches the job to the background without hanging the active WinRM session.</li>
+                <li><strong>Audit Logging:</strong> Logs the successful execution to the central UHDC CSV database via SMB (<strong>Port 445</strong>).</li>
+            </ol>
+        </section>
+
+        <section style="border-bottom: none;">
+            <h2 class="console-font">Q&A</h2>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: If a user is actively working and has files open, will the script fail or crash their applications?</div>
+                <div class="qa-answer">Neither. The script uses the <code>-ErrorAction SilentlyContinue</code> parameter across all file deletion loops. If a cache file is actively locked by an open application (like Word or Chrome), PowerShell smoothly skips that specific file and moves to the next one without throwing errors or disrupting the user's workflow.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Why use PsExec to clear the SCCM cache instead of the native COM object?</div>
+                <div class="qa-answer">The COM object relies heavily on a perfectly healthy WMI repository on the target machine. If the client is broken, the cleanup fails. Executing a strict folder deletion and recreation as the SYSTEM account via PsExec bypasses local SCCM client health issues and guarantees the cache is purged.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: What does the /sagerun:1 flag do for cleanmgr.exe?</div>
+                <div class="qa-answer">The <code>cleanmgr.exe</code> utility requires a user to manually check boxes in a GUI to tell it what to clean. The <code>/sagerun:1</code> flag tells the utility to run silently in the background using a pre-configured set of rules (usually configured via <code>/sageset:1</code> on your master image), allowing it to automatically clean up Windows Update files, memory dumps, and delivery optimization caches without any user interaction.</div>
+            </div>
+        </section>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UHDC | The Toolkit</title>
+    <style>
+        /* CORE VARIABLES & RESET */
+        :root {
+            --bg-dark: #1E1E1E;
+            --bg-darker: #111111;
+            --neon-green: #00FF00;
+            --neon-blue: #00A2ED;
+            --text-main: #DDDDDD;
+            --text-muted: #888888;
+            --border-color: #333333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        .console-font {
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        /* NAVIGATION BAR */
+        nav {
+            background-color: var(--bg-darker);
+            border-bottom: 1px solid var(--neon-blue);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .nav-logo {
+            color: var(--neon-blue);
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--neon-green);
+        }
+
+        /* LAYOUT & CONTAINERS */
+        .container {
+            max-width: 1200px; /* Widened slightly to accommodate the larger grid */
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            padding: 4rem 0 2rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        section {
+            padding: 3rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* TYPOGRAPHY & ACCENTS */
+        h1 {
+            font-size: 3.5rem;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+            letter-spacing: -1px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+            color: #CCCCCC;
+        }
+
+        .highlight { color: var(--neon-green); }
+
+        /* TOOL GRID SYSTEM */
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .tool-card {
+            background-color: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--neon-blue);
+            border-radius: 6px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tool-card:hover {
+            border-color: var(--neon-green);
+            border-left-color: var(--neon-green);
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 255, 0, 0.05);
+        }
+
+        .tool-card h3 {
+            font-size: 1.4rem;
+            color: var(--text-main);
+            margin-bottom: 0.2rem;
+            transition: color 0.3s ease;
+        }
+
+        .tool-card:hover h3 {
+            color: var(--neon-green);
+        }
+
+        .tool-card .tool-type {
+            font-size: 0.85rem;
+            color: var(--neon-blue);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .tool-card p {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 0;
+            flex-grow: 1;
+        }
+
+        .tool-card .view-docs {
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-align: right;
+            transition: color 0.3s ease;
+        }
+
+        .tool-card:hover .view-docs {
+            color: var(--neon-green);
+        }
+
+        /* FOOTER */
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo console-font">UHDC.io</a>
+            <div class="nav-links console-font">
+                <a href="index.html">HOME</a>
+                <a href="about.html">ABOUT</a>
+                <a href="tools.html" class="active">TOOLS</a>
+                <a href="governance.html">GOVERNANCE</a>
+                <a href="https://github.com/bobbyburnsy" target="_blank" class="btn-nav">GITHUB REPO</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>The Arsenal.</h1>
+            <p class="console-font highlight">>>> INTELLIGENT TOOLS THAT WORK FOR YOU—AND YOUR USERS.</p>
+        </header>
+
+        <section style="padding-bottom: 0; border-bottom: none;">
+            <p>Come see what's under the hood. The Unified Help Desk Console is powered by a modular suite of hyper-optimized, multi-threaded PowerShell scripts. Every tool is integrated with our <strong>Interactive Training Engine</strong>, allowing newer technicians to safely learn the underlying command-line logic before executing actions.</p>
+            <p>Select a tool below to view its architectural breakdown, deployment scenarios, and technical documentation.</p>
+        </section>
+
+        <section>
+            <div class="tool-grid">
+
+                <!-- CORE ENGINES -->
+                <a href="smartusersearch.html" class="tool-card">
+                    <h3 class="console-font">SmartUserSearch.ps1</h3>
+                    <div class="tool-type console-font">AD Intelligence Engine</div>
+                    <p>Cross-references Active Directory profiles with historic hardware telemetry to instantly map users to their physical devices and calculate password expirations.</p>
+                    <div class="view-docs console-font">View Documentation ></div>
+                </a>
+
+                <a href="intunemenu.html" class="tool-card">
+                    <h3 class="console-font">IntuneMenu.ps1</h3>
+                    <div class="tool-type console-font">Graph API Manager</div>
+                    <p>A contextual GUI overlay for Microsoft Entra ID. Bypass web portals to instantly retrieve BitLocker keys, reset MFA, and execute remote device wipes.</p>
+                    <div class="view-docs console-font">View Documentation ></div>
+                </a>
+
+                <a href="globalnetworkmap.html" class="tool-card">
+                    <h3 class="console-font">GlobalNetworkMap.ps1</h3>
+                    <div class="tool-type console-font">Asset Telemetry</div>
+                    <p>A background scanning engine that sweeps Active Directory to compile a master JSON database of active user-to-computer relationships.</p>
+                    <div class="view-docs console-font">View Documentation ></div>
+                </a>
+
+                <a href="networkscan.html" class="tool-card">
+                    <h3 class="console-font">NetworkScan.ps1</h3>
+                    <div class="tool-type console-font">Context-Aware Locator</div>
+                    <p>An intelligence engine that locates specific users on the network by pivoting through AD attributes (like Office or OU) and historical data.</p>
+                    <div class="view-docs console-font">View Documentation ></div>
+                </a>
+
+                <!-- ENDPOINT REMEDIATION -->
+                <a href="deepclean.html" class="tool-card">
+                    <h3 class="console-font">DeepClean.ps1</h3>
+                    <div class="tool-type console-font">Storage Remediation</div>
+                    <p>An aggressive cleanup script that safely purges SCCM caches, zeroes out bloated temp directories, and executes background disk cleanup over WinRM.</p>
+                    <div class="view-docs console-font">View Documentation ></div>
+                </a>
+
+                <a href="browserreset.html" class="tool-card">
+                    <h3 class="console-font">BrowserReset.ps1</h3>
+                    <div class="tool-type console-font">Profile Remediation</div>
+                    <p>Safely resets corrupted Chrome and Edge profiles by terminating locked processes while automatically backing up and restoring user bookmarks.</p>
+                    <div class="view-docs console-font">View Documentation ></div>
+                </a>
+
+                <a href="fixprintspooler.html" class="tool-card">
+                    <h3 class="console-font">Fix-PrintSpooler.ps1</h3>
+                    <div class="tool-type console-font">Service Remediation</div>
+                    <p>Resolves stuck print queues by safely stopping the spooler service, clearing corrupted cache files, and restarting the service seamlessly.</p>
+                    <div class="view-docs console-font">View Documentation ></div>
+                </a>
+
+                <a href="restartsccmagent.html" class="tool-card">
+                    <h3 class="console-font">Restart-SCCMAgent.ps1</h3>
+                    <div class="tool-type console-font">Deployment Remediation</div>
+                    <p>Safely restarts the MECM/SCCM Agent service (CcmExec) to resolve stalled software deployments and force machine policy retrievals.</p>
+                    <div class="view-docs console-font">View Documentation ></div>
+                </a>
+
+                <a href="registerdns.html" class="tool-card">
+                    <h3 class="console-font">Register-DNS.ps1</h3>
+                    <div class="tool-type console-font">Network Remediation</div>
+                    <p>Forces a remote DNS flush and re-registration to resolve stale IP address routing issues when users switch between Wi-Fi and wired docks.</p>
+                    <div class="view-docs console-font">View Documentation ></div>
+                </a>
+
+                <!-- DIAGNOSTICS & FORENSICS -->
+                <a href="geteventlogs.html" class="tool-card">
+                    <h3 class="console-font">Get-EventLogs.ps1</h3>
+                    <div class="tool-type console-font">Forensic Retrieval</div>
+                    <p>Executes deep-scan string matching against remote event logs over RPC, cleanly truncating console output while exporting the full dataset to CSV.</p>
+                    <div class="view-docs console-font">View Documentation ></div>
+                </a>
+
+                <a href="getbatteryreport.html" class="tool-card">
+                    <h3 class="console-font">Get-BatteryReport.ps1</h3>
+                    <div class="tool-type console-font">Hardware Diagnostics</div>
+                    <p>Generates and retrieves a comprehensive 14-day battery health and degradation HTML report for remote laptops.</p>
+                    <div class="view-docs console-font">View Documentation ></div>
+                </a>
+
+                <a href="getsmartwarranty.html" class="tool-card">
+                    <h3 class="console-font">Get-SmartWarranty.ps1</h3>
+                    <div class="tool-type console-font">Hardware Diagnostics</div>
+                    <p>Queries hardware CIM data to extract serial numbers and automatically routes technicians to the correct vendor warranty portal (Dell, Lenovo, HP).</p>
+                    <div class="view-docs console-font">View Documentation ></div>
+                </a>
+
+                <a href="getnetworkinfo.html" class="tool-card">
+                    <h3 class="console-font">Get-NetworkInfo.ps1</h3>
+                    <div class="tool-type console-font">Network Diagnostics</div>
+                    <p>Retrieves active network adapter configurations, correlating IPv4 addresses with MAC addresses and negotiated link speeds.</p>
+                    <div class="view-docs console-font">View Documentation ></div>
+                </a>
+
+                <a href="getuptime.html" class="tool-card">
+                    <h3 class="console-font">Get-Uptime.ps1</h3>
+                    <div class="tool-type console-font">System Diagnostics</div>
+                    <p>Calculates precise system uptime via WMI to verify user reboot claims and identify potential stability issues.</p>
+                    <div class="view-docs console-font">View Documentation ></div>
+                </a>
+
+                <!-- ADMINISTRATION & DEPLOYMENT -->
+                <a href="remoteinstall.html" class="tool-card">
+                    <h3 class="console-font">RemoteInstall.ps1</h3>
+                    <div class="tool-type console-font">Deployment Engine</div>
+                    <p>Parses a centralized software library and utilizes PsExec to silently push payloads and execute installations under the SYSTEM context.</p>
+                    <div class="view-docs console-font">View Documentation ></div>
+                </a>
+
+                <a href="invokegpupdate.html" class="tool-card">
+                    <h3 class="console-font">Invoke-GPUpdate.ps1</h3>
+                    <div class="tool-type console-font">Policy Administration</div>
+                    <p>Triggers an immediate, background Group Policy update on the target machine without interrupting the user's workflow.</p>
+                    <div class="view-docs console-font">View Documentation ></div>
+                </a>
+
+                <a href="enableremotedesktop.html" class="tool-card">
+                    <h3 class="console-font">Enable-RemoteDesktop.ps1</h3>
+                    <div class="tool-type console-font">Access Administration</div>
+                    <p>Silently configures registry keys, firewall rules, and services to enable RDP access on remote endpoints.</p>
+                    <div class="view-docs console-font">View Documentation ></div>
+                </a>
+
+                <a href="getlocaladmins.html" class="tool-card">
+                    <h3 class="console-font">Get-LocalAdmins.ps1</h3>
+                    <div class="tool-type console-font">Security Audit</div>
+                    <p>Audits the remote machine's local Administrators group to ensure compliance and identify unauthorized privilege escalation.</p>
+                    <div class="view-docs console-font">View Documentation ></div>
+                </a>
+
+                <a href="restartpc.html" class="tool-card">
+                    <h3 class="console-font">RestartPC.ps1</h3>
+                    <div class="tool-type console-font">Power Controls</div>
+                    <p>Provides a comprehensive power management interface for graceful reboots, forced logoffs, and shutdown aborts.</p>
+                    <div class="view-docs console-font">View Documentation ></div>
+                </a>
+
+                <a href="bookmarkbackup.html" class="tool-card">
+                    <h3 class="console-font">BookmarkBackup.ps1</h3>
+                    <div class="tool-type console-font">Data Preservation</div>
+                    <p>Securely extracts and backs up Google Chrome and Microsoft Edge bookmarks over the network prior to destructive profile resets.</p>
+                    <div class="view-docs console-font">View Documentation ></div>
+                </a>
+
+            </div>
+        </section>
+
+        <footer>
+            <p class="console-font">2026 Unified Help Desk Console. Engineered for Enterprise IT.</p>
+        </footer>
+    </div>
+
+</body>
+</html>

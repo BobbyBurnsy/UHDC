@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UHDC Tools | Get-SmartWarranty.ps1</title>
+    <style>
+        /* CORE VARIABLES & RESET */
+        :root {
+            --bg-dark: #1E1E1E;
+            --bg-darker: #111111;
+            --neon-green: #00FF00;
+            --neon-blue: #00A2ED;
+            --text-main: #DDDDDD;
+            --text-muted: #888888;
+            --border-color: #333333;
+            --danger-red: #FF4444;
+            --warning-yellow: #FFD700;
+            --training-gold: #FFD700;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        .console-font {
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        /* NAVIGATION BAR */
+        nav {
+            background-color: var(--bg-darker);
+            border-bottom: 1px solid var(--neon-blue);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .nav-logo {
+            color: var(--neon-blue);
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--neon-green);
+        }
+
+        /* LAYOUT & CONTAINERS */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            padding: 3rem 0 2rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        section {
+            padding: 2.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* TYPOGRAPHY & ACCENTS */
+        h1 {
+            font-size: 2.5rem;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--neon-green);
+            margin-bottom: 1.2rem;
+            font-weight: normal;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: #FFFFFF;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid var(--neon-blue);
+            padding-left: 10px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 1.2rem;
+            color: #CCCCCC;
+        }
+
+        strong {
+            color: #FFFFFF;
+        }
+
+        ul, ol {
+            margin-bottom: 1.5rem;
+            margin-left: 2rem;
+            color: #CCCCCC;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .highlight { color: var(--neon-green); }
+        .danger { color: var(--danger-red); font-weight: bold; }
+        .warning { color: var(--warning-yellow); }
+
+        /* TERMINAL WINDOW EFFECT */
+        .terminal-box {
+            background-color: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--neon-blue);
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin: 1.5rem 0;
+        }
+
+        .terminal-box p {
+            margin-bottom: 0.5rem;
+            font-size: 1.05rem;
+        }
+
+        /* TRAINING BLOCKS */
+        .training-block {
+            background-color: #1A1A1A;
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--training-gold);
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+        }
+
+        .training-header {
+            color: var(--training-gold);
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .training-code {
+            background-color: #0C0C0C;
+            color: var(--neon-green);
+            padding: 1rem;
+            border: 1px solid #333;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            overflow-x: auto;
+        }
+
+        /* QA BLOCKS */
+        .qa-block {
+            background-color: #252526;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            border-left: 3px solid var(--neon-green);
+        }
+
+        .qa-question {
+            font-weight: bold;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+            font-size: 1.15rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo console-font">UHDC.io</a>
+            <div class="nav-links console-font">
+                <a href="index.html">HOME</a>
+                <a href="about.html">ABOUT</a>
+                <a href="tools.html">TOOLS</a>
+                <a href="governance.html">GOVERNANCE</a>
+                <a href="https://github.com/bobbyburnsy" target="_blank" class="btn-nav">GITHUB REPO</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <p class="console-font" style="color: var(--text-muted); margin-bottom: 0.5rem;">\Tools\Get-SmartWarranty.ps1</p>
+            <h1>Get-SmartWarranty.ps1</h1>
+            <p class="console-font highlight">>>> HARDWARE DIAGNOSTICS & ROUTING</p>
+        </header>
+
+        <section style="padding-top: 1rem; border-bottom: none;">
+            <div class="terminal-box console-font">
+                <p style="color: var(--text-main);">========================================</p>
+                <p style="color: var(--text-main);"> [UHDC] WARRANTY LOOKUP: LAPTOP-US-4829</p>
+                <p style="color: var(--text-main); margin-bottom: 1.5rem;">========================================</p>
+
+                <p style="color: var(--text-main);"> [UHDC] [i] Querying Hardware Info...</p>
+                <p style="color: var(--text-muted);">  > Make:   Dell Inc.</p>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">  > Serial: 8J92XQ3</p>
+
+                <p style="color: var(--neon-blue);">[UHDC SUCCESS] Opening Warranty Page in your default browser...</p>
+                <p style="color: var(--text-muted);">> Routing to: https://www.dell.com/support/home/en-us/product-support/servicetag/8J92XQ3/overview</p>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">IT Pro Summary</h2>
+            <p>This is an automated hardware diagnostic and routing tool. It queries the target computer's WMI/CIM repository to extract the embedded motherboard serial number and system manufacturer. It then utilizes dynamic string matching to automatically construct the correct vendor support URL (Dell, Lenovo, HP, or Microsoft) and launches the technician's local web browser directly to the device's specific warranty entitlement page.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">When to Use This Tool</h2>
+
+            <h3>The Scenario</h3>
+            <p>A user calls the help desk reporting physical hardware damage—perhaps they dropped their laptop and cracked the screen, or the keyboard has stopped working. Before you can order replacement parts or dispatch a field technician, you need to verify if the device is still covered under the manufacturer's active warranty or an accidental damage protection plan. Asking the user to flip the laptop over and read a tiny, faded 7-to-10 character alphanumeric string over the phone almost always results in typos and frustration.</p>
+
+            <h3>The Fix</h3>
+            <p>While the user is explaining the damage, the technician clicks "Smart Warranty" in the UHDC. The script silently reaches across the network, queries the motherboard, identifies that it is a Lenovo ThinkPad, grabs the serial number, and instantly opens the Lenovo Support portal on the technician's screen. The technician can immediately see the warranty expiration date and tell the user, "Good news, you have Next Business Day Onsite coverage. I'll get a tech dispatched to your desk tomorrow."</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">Interactive Training Engine</h2>
+            <p>When a junior technician runs this tool with <strong>Training Mode</strong> enabled, the UHDC pauses execution at each critical phase. It displays a pop-up explaining <em>why</em> the action is necessary, what the in-person equivalent would be, and reveals the exact PowerShell code being executed under the hood. Here is what the trainee sees during a Smart Warranty lookup:</p>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 1: QUERY HARDWARE INFORMATION</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>Use this when a user reports physical hardware damage (e.g., cracked screen, failing drive, swollen battery) or when preparing to order replacement parts and you need to verify if the device is still covered under the manufacturer's active warranty or accidental damage protection plan.</p>
+                <p><strong>WHAT IT DOES:</strong><br>We are establishing a remote WMI/CIM session to query the target computer's motherboard (Win32_BIOS) for its embedded Serial Number/Service Tag, and the system enclosure (Win32_ComputerSystem) for the Manufacturer (Make).</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>If you were physically at the user's desk, you would flip the laptop over and read the tiny printed sticker on the bottom chassis, or open an elevated Command Prompt and type 'wmic bios get serialnumber' followed by 'wmic computersystem get manufacturer'.</p>
+                <div class="training-code console-font">$bios = Get-CimInstance -ComputerName $Target -ClassName Win32_BIOS<br>$cs = Get-CimInstance -ComputerName $Target -ClassName Win32_ComputerSystem</div>
+            </div>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 2: LAUNCH VENDOR WARRANTY PORTAL</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>Immediately after retrieving the serial number to check the exact expiration date and entitlement level (e.g., Next Business Day Onsite vs. Depot Repair).</p>
+                <p><strong>WHAT IT DOES:</strong><br>We are using the retrieved Manufacturer name to automatically determine the correct vendor support portal (Dell, Lenovo, HP, or Microsoft). We then inject the Serial Number directly into the URL and launch it in your local default web browser.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>You would open a web browser, search for 'Dell Warranty Check' (or the respective vendor), navigate to their support page, manually type the alphanumeric serial number into the search box, and click Submit.</p>
+                <div class="training-code console-font">Start-Process "$url"</div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">Technical Execution Pipeline</h2>
+            <ol>
+                <li><strong>Pre-Execution Validation:</strong> Executes a fast ICMP Ping to verify endpoint connectivity before attempting WMI connections.</li>
+                <li><strong>Hardware Telemetry (WMI/CIM):</strong> Establishes a remote session over <strong>Port 5985 (HTTP)</strong> to query two specific WMI classes: <code>Win32_BIOS</code> (to extract the <code>SerialNumber</code>) and <code>Win32_ComputerSystem</code> (to extract the <code>Manufacturer</code>).</li>
+                <li><strong>Dynamic Routing Logic:</strong> Uses a <code>switch</code> or <code>if/match</code> statement to evaluate the manufacturer string (e.g., matching "Hewlett-Packard" to HP). It then concatenates the serial number into the specific REST API or search query URL format required by that vendor's website.</li>
+                <li><strong>Local Shell Handoff:</strong> Executes <code>Start-Process $url</code>, which instructs the technician's local Windows OS to open the constructed link in their default web browser.</li>
+                <li><strong>Audit Logging:</strong> Logs the successful query (including the Make and Serial Number) to the central UHDC CSV database via SMB (<strong>Port 445</strong>).</li>
+            </ol>
+        </section>
+
+        <section style="border-bottom: none;">
+            <h2 class="console-font">Q&A</h2>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Which hardware vendors are currently supported by the auto-routing logic?</div>
+                <div class="qa-answer">The script currently supports automatic URL construction for <strong>Dell</strong>, <strong>Lenovo</strong>, <strong>HP</strong>, and <strong>Microsoft Surface</strong> devices. If a different manufacturer is detected (e.g., Panasonic or a custom-built PC), the script will still display the serial number in the console for manual lookup, but it will not attempt to open a web browser.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Why does the script warn me about Microsoft Surface devices?</div>
+                <div class="qa-answer">Unlike Dell or Lenovo, which allow public, unauthenticated queries against their warranty databases, Microsoft typically requires an administrator to log into the "Microsoft 365 admin center" or "Surface Support Portal" to view warranty entitlements. The script will route you to the correct login page, but it cannot bypass the authentication requirement.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: What happens if the WMI query fails?</div>
+                <div class="qa-answer">If the target machine has a corrupted WMI repository or a strict firewall blocking Port 5985, the script will fail gracefully. It will output an error to the console suggesting "Possible cause: Firewall, RPC error, or Access Denied," allowing the technician to pivot to a different troubleshooting method.</div>
+            </div>
+        </section>
+    </div>
+
+</body>
+</html>

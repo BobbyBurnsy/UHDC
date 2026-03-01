@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UHDC Tools | ThemeManager.ps1</title>
+    <style>
+        /* CORE VARIABLES & RESET */
+        :root {
+            --bg-dark: #1E1E1E;
+            --bg-darker: #111111;
+            --neon-green: #00FF00;
+            --neon-blue: #00A2ED;
+            --text-main: #DDDDDD;
+            --text-muted: #888888;
+            --border-color: #333333;
+            --danger-red: #FF4444;
+            --warning-yellow: #FFD700;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        .console-font {
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        /* NAVIGATION BAR */
+        nav {
+            background-color: var(--bg-darker);
+            border-bottom: 1px solid var(--neon-blue);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .nav-logo {
+            color: var(--neon-blue);
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--neon-green);
+        }
+
+        /* LAYOUT & CONTAINERS */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            padding: 3rem 0 2rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        section {
+            padding: 2.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* TYPOGRAPHY & ACCENTS */
+        h1 {
+            font-size: 2.5rem;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--neon-green);
+            margin-bottom: 1.2rem;
+            font-weight: normal;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: #FFFFFF;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid var(--neon-blue);
+            padding-left: 10px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 1.2rem;
+            color: #CCCCCC;
+        }
+
+        strong {
+            color: #FFFFFF;
+        }
+
+        ul, ol {
+            margin-bottom: 1.5rem;
+            margin-left: 2rem;
+            color: #CCCCCC;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .highlight { color: var(--neon-green); }
+
+        /* TERMINAL WINDOW EFFECT */
+        .terminal-box {
+            background-color: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--neon-blue);
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin: 1.5rem 0;
+        }
+
+        .terminal-box p {
+            margin-bottom: 0.5rem;
+            font-size: 1.05rem;
+        }
+
+        /* THEME SHOWCASE GRID */
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .theme-card {
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            transition: transform 0.2s ease;
+        }
+
+        .theme-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .theme-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 0.5rem;
+        }
+
+        .swatch-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .swatch {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            margin-right: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .swatch-label {
+            font-size: 0.95rem;
+            color: #DDD;
+        }
+
+        /* QA BLOCKS */
+        .qa-block {
+            background-color: #252526;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            border-left: 3px solid var(--neon-green);
+        }
+
+        .qa-question {
+            font-weight: bold;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+            font-size: 1.15rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo console-font">UHDC.io</a>
+            <div class="nav-links console-font">
+                <a href="index.html">HOME</a>
+                <a href="about.html">ABOUT</a>
+                <a href="tools.html">TOOLS</a>
+                <a href="governance.html">GOVERNANCE</a>
+                <a href="https://github.com/bobbyburnsy" target="_blank" class="btn-nav">GITHUB REPO</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <p class="console-font" style="color: var(--text-muted); margin-bottom: 0.5rem;">\ThemeManager.ps1</p>
+            <h1>ThemeManager.ps1</h1>
+            <p class="console-font highlight">>>> UI CUSTOMIZATION ENGINE</p>
+        </header>
+
+        <section style="padding-top: 1rem; border-bottom: none;">
+            <div class="terminal-box console-font">
+                <p style="color: var(--text-main);">========================================</p>
+                <p style="color: var(--text-main);"> [UHDC] THEME MANAGER INITIALIZED</p>
+                <p style="color: var(--text-main); margin-bottom: 1.5rem;">========================================</p>
+
+                <p style="color: var(--text-main);"> [UHDC] Scanning UHDC.ps1 for current color profile...</p>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">  > [OK] Current Theme Detected: Seahawks (Default)</p>
+
+                <p style="color: var(--text-main);"> [UHDC] Target Theme Selected: Cyberpunk 2077</p>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">  > Executing Unique Hex Replacement...</p>
+
+                <p style="color: var(--neon-blue);">[UHDC SUCCESS] Theme applied to UHDC.ps1 successfully!</p>
+                <p style="color: var(--text-muted);">> Restart the console to see changes.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">IT Pro Summary</h2>
+            <p>The Theme Manager is a standalone GUI utility designed to hot-swap the color palette of the Unified Help Desk Console. Because IT tools should fit the vibe of your specific department, this script allows administrators to instantly apply pre-built color profiles to the massive XAML interface without having to manually edit hundreds of lines of code.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">Pre-Built Color Profiles</h2>
+            <p>The script includes 7 mathematically unique color profiles. When you run the tool, it provides a live preview of the selected theme before applying it to the master script.</p>
+
+            <div class="theme-grid">
+                <!-- Seahawks (Default) -->
+                <div class="theme-card" style="background-color: #1E1E1E;">
+                    <div class="theme-title console-font" style="color: #00A2ED;">Seahawks (Default)</div>
+                    <div class="swatch-container"><div class="swatch" style="background-color: #1E1E1E;"></div><span class="swatch-label">Background (#1E1E1E)</span></div>
+                    <div class="swatch-container"><div class="swatch" style="background-color: #00A2ED;"></div><span class="swatch-label">Primary Accent (#00A2ED)</span></div>
+                    <div class="swatch-container"><div class="swatch" style="background-color: #00FF00;"></div><span class="swatch-label">Secondary Accent (#00FF00)</span></div>
+                </div>
+
+                <!-- Cyberpunk 2077 -->
+                <div class="theme-card" style="background-color: #0D0208;">
+                    <div class="theme-title console-font" style="color: #00F0FF;">Cyberpunk 2077</div>
+                    <div class="swatch-container"><div class="swatch" style="background-color: #0D0208;"></div><span class="swatch-label">Background (#0D0208)</span></div>
+                    <div class="swatch-container"><div class="swatch" style="background-color: #00F0FF;"></div><span class="swatch-label">Primary Accent (#00F0FF)</span></div>
+                    <div class="swatch-container"><div class="swatch" style="background-color: #FF003C;"></div><span class="swatch-label">Secondary Accent (#FF003C)</span></div>
+                </div>
+
+                <!-- Dracula -->
+                <div class="theme-card" style="background-color: #282A36;">
+                    <div class="theme-title console-font" style="color: #BD93F9;">Dracula</div>
+                    <div class="swatch-container"><div class="swatch" style="background-color: #282A36;"></div><span class="swatch-label">Background (#282A36)</span></div>
+                    <div class="swatch-container"><div class="swatch" style="background-color: #BD93F9;"></div><span class="swatch-label">Primary Accent (#BD93F9)</span></div>
+                    <div class="swatch-container"><div class="swatch" style="background-color: #50FA7B;"></div><span class="swatch-label">Secondary Accent (#50FA7B)</span></div>
+                </div>
+
+                <!-- The Matrix -->
+                <div class="theme-card" style="background-color: #000000;">
+                    <div class="theme-title console-font" style="color: #00FF41;">The Matrix</div>
+                    <div class="swatch-container"><div class="swatch" style="background-color: #000000;"></div><span class="swatch-label">Background (#000000)</span></div>
+                    <div class="swatch-container"><div class="swatch" style="background-color: #00FF41;"></div><span class="swatch-label">Primary Accent (#00FF41)</span></div>
+                    <div class="swatch-container"><div class="swatch" style="background-color: #00FF42;"></div><span class="swatch-label">Secondary Accent (#00FF42)</span></div>
+                </div>
+
+                <!-- Solarized Dark -->
+                <div class="theme-card" style="background-color: #002B36;">
+                    <div class="theme-title console-font" style="color: #268BD2;">Solarized Dark</div>
+                    <div class="swatch-container"><div class="swatch" style="background-color: #002B36;"></div><span class="swatch-label">Background (#002B36)</span></div>
+                    <div class="swatch-container"><div class="swatch" style="background-color: #268BD2;"></div><span class="swatch-label">Primary Accent (#268BD2)</span></div>
+                    <div class="swatch-container"><div class="swatch" style="background-color: #2AA198;"></div><span class="swatch-label">Secondary Accent (#2AA198)</span></div>
+                </div>
+
+                <!-- Blood Moon -->
+                <div class="theme-card" style="background-color: #1A0000;">
+                    <div class="theme-title console-font" style="color: #FF3333;">Blood Moon</div>
+                    <div class="swatch-container"><div class="swatch" style="background-color: #1A0000;"></div><span class="swatch-label">Background (#1A0000)</span></div>
+                    <div class="swatch-container"><div class="swatch" style="background-color: #FF3333;"></div><span class="swatch-label">Primary Accent (#FF3333)</span></div>
+                    <div class="swatch-container"><div class="swatch" style="background-color: #FF8800;"></div><span class="swatch-label">Secondary Accent (#FF8800)</span></div>
+                </div>
+
+                <!-- Deep Ocean -->
+                <div class="theme-card" style="background-color: #0F172A;">
+                    <div class="theme-title console-font" style="color: #38BDF8;">Deep Ocean</div>
+                    <div class="swatch-container"><div class="swatch" style="background-color: #0F172A;"></div><span class="swatch-label">Background (#0F172A)</span></div>
+                    <div class="swatch-container"><div class="swatch" style="background-color: #38BDF8;"></div><span class="swatch-label">Primary Accent (#38BDF8)</span></div>
+                    <div class="swatch-container"><div class="swatch" style="background-color: #34D399;"></div><span class="swatch-label">Secondary Accent (#34D399)</span></div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">Technical Execution Pipeline</h2>
+            <ol>
+                <li><strong>Theme Dictionary:</strong> The script contains a hashtable of themes. Every theme is designed with 6 <em>mathematically unique</em> hex codes. For example, "The Matrix" theme uses <code>#000000</code>, <code>#010101</code>, and <code>#020202</code> for its background layers to ensure no two variables share the exact same string.</li>
+                <li><strong>State Detection:</strong> When executed, the script reads the raw text of <code>UHDC.ps1</code>. It scans the file for the unique "Primary Accent" hex code to automatically determine which theme is currently active.</li>
+                <li><strong>Unique Hex Replacement:</strong> Once the current theme is identified, the script performs a strict <code>.Replace()</code> operation, swapping the 6 old hex codes with the 6 new hex codes from the selected theme. This avoids complex RegEx parsing and guarantees the XAML structure remains perfectly intact.</li>
+                <li><strong>Compiler Awareness:</strong> After saving the file, the script checks if a compiled <code>UHDC.exe</code> exists in the directory. If it does, it alerts the administrator that the executable must be recompiled to bake the new colors into the binary.</li>
+            </ol>
+        </section>
+
+        <section style="border-bottom: none;">
+            <h2 class="console-font">Q&A</h2>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Will changing the theme break the UI layout?</div>
+                <div class="qa-answer">No. The Theme Manager uses a highly targeted string replacement strategy. It only looks for and replaces the exact 6-character hex codes defined in the dictionary. It does not touch the XML tags, margins, or grid definitions of the UI.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Can I add my own custom theme?</div>
+                <div class="qa-answer">Yes! Simply open <code>ThemeManager.ps1</code> in a text editor and add a new line to the <code>$Themes</code> dictionary. Just ensure that the 6 hex codes you choose are unique to your theme so the script can accurately detect and replace them in the future.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: I applied a theme, but my UHDC.exe still looks the same. Why?</div>
+                <div class="qa-answer">When you compile a PowerShell script into an <code>.exe</code> using PS2EXE, the code (and its colors) are permanently baked into the executable file. The Theme Manager modifies the source <code>UHDC.ps1</code> file. To see the changes in the executable, you must run your compiler script again to generate a fresh <code>.exe</code> from the newly themed <code>.ps1</code> file.</div>
+            </div>
+        </section>
+    </div>
+
+</body>
+</html>

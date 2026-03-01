@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UHDC Tools | Fix-PrintSpooler.ps1</title>
+    <style>
+        /* CORE VARIABLES & RESET */
+        :root {
+            --bg-dark: #1E1E1E;
+            --bg-darker: #111111;
+            --neon-green: #00FF00;
+            --neon-blue: #00A2ED;
+            --text-main: #DDDDDD;
+            --text-muted: #888888;
+            --border-color: #333333;
+            --danger-red: #FF4444;
+            --warning-yellow: #FFD700;
+            --training-gold: #FFD700;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        .console-font {
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        /* NAVIGATION BAR */
+        nav {
+            background-color: var(--bg-darker);
+            border-bottom: 1px solid var(--neon-blue);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .nav-logo {
+            color: var(--neon-blue);
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--neon-green);
+        }
+
+        /* LAYOUT & CONTAINERS */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            padding: 3rem 0 2rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        section {
+            padding: 2.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* TYPOGRAPHY & ACCENTS */
+        h1 {
+            font-size: 2.5rem;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--neon-green);
+            margin-bottom: 1.2rem;
+            font-weight: normal;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: #FFFFFF;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid var(--neon-blue);
+            padding-left: 10px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 1.2rem;
+            color: #CCCCCC;
+        }
+
+        strong {
+            color: #FFFFFF;
+        }
+
+        ul, ol {
+            margin-bottom: 1.5rem;
+            margin-left: 2rem;
+            color: #CCCCCC;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .highlight { color: var(--neon-green); }
+        .danger { color: var(--danger-red); font-weight: bold; }
+        .warning { color: var(--warning-yellow); }
+
+        /* TERMINAL WINDOW EFFECT */
+        .terminal-box {
+            background-color: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--neon-blue);
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin: 1.5rem 0;
+        }
+
+        .terminal-box p {
+            margin-bottom: 0.5rem;
+            font-size: 1.05rem;
+        }
+
+        /* TRAINING BLOCKS */
+        .training-block {
+            background-color: #1A1A1A;
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--training-gold);
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+        }
+
+        .training-header {
+            color: var(--training-gold);
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .training-code {
+            background-color: #0C0C0C;
+            color: var(--neon-green);
+            padding: 1rem;
+            border: 1px solid #333;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            overflow-x: auto;
+        }
+
+        /* QA BLOCKS */
+        .qa-block {
+            background-color: #252526;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            border-left: 3px solid var(--neon-green);
+        }
+
+        .qa-question {
+            font-weight: bold;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+            font-size: 1.15rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo console-font">UHDC.io</a>
+            <div class="nav-links console-font">
+                <a href="index.html">HOME</a>
+                <a href="about.html">ABOUT</a>
+                <a href="tools.html">TOOLS</a>
+                <a href="governance.html">GOVERNANCE</a>
+                <a href="https://github.com/bobbyburnsy" target="_blank" class="btn-nav">GITHUB REPO</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <p class="console-font" style="color: var(--text-muted); margin-bottom: 0.5rem;">\Tools\Fix-PrintSpooler.ps1</p>
+            <h1>Fix-PrintSpooler.ps1</h1>
+            <p class="console-font highlight">>>> PRINT QUEUE REMEDIATION</p>
+        </header>
+
+        <section style="padding-top: 1rem; border-bottom: none;">
+            <div class="terminal-box console-font">
+                <p style="color: var(--text-main);">========================================</p>
+                <p style="color: var(--text-main);"> [UHDC] PRINT SPOOLER REMEDIATION</p>
+                <p style="color: var(--text-main); margin-bottom: 1.5rem;">========================================</p>
+
+                <p style="color: var(--text-main);"> [UHDC] [i] Connecting to LAPTOP-US-4829 via WinRM...</p>
+                <p style="color: var(--text-muted);">  > [1/3] Stopping Print Spooler service...</p>
+                <p style="color: var(--text-muted);">  > [2/3] Clearing stuck print jobs...</p>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">  > [3/3] Starting Print Spooler service...</p>
+
+                <p style="color: var(--neon-blue);">[UHDC SUCCESS] Print Spooler restarted and print queue cleared!</p>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">IT Pro Summary</h2>
+            <p>This is a rapid remediation tool designed to resolve corrupted local print queues. It utilizes WinRM to safely decouple the Windows Print Spooler service, purges the underlying system directory of corrupted <code>.SHD</code> and <code>.SPL</code> files, and restores the service to a running state. It eliminates the need for a full system reboot, allowing technicians to resolve printing issues instantly during a live support call.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">When to Use This Tool</h2>
+
+            <h3>The Scenario</h3>
+            <p>A user calls the help desk in a panic because they need to print a critical document for a meeting, but their printer is unresponsive. They open their print queue and see a document stuck on "Deleting - Error." Because that single corrupted job is blocking the queue, no other documents will print. Right-clicking and selecting "Cancel" does nothing. Traditionally, a technician would have to ask the user to save all their work and reboot their computer, wasting 5 to 10 minutes of valuable time.</p>
+
+            <h3>The Fix</h3>
+            <p>While the user is still explaining the issue on the phone, the technician clicks "Fix Spooler" in the UHDC. Within 3 seconds, the script stops the service, deletes the corrupted file, and restarts the spooler. The technician simply says, "Try printing it again right now." The document prints successfully, and the call is closed in under a minute.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">Interactive Training Engine</h2>
+            <p>When a junior technician runs this tool with <strong>Training Mode</strong> enabled, the UHDC pauses execution at each critical phase. It displays a pop-up explaining <em>why</em> the action is necessary, what the in-person equivalent would be, and reveals the exact PowerShell code being executed under the hood. Here is what the trainee sees during a Spooler Fix:</p>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 1: STOP THE PRINT SPOOLER SERVICE</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>Use this when a user complains that a document is 'stuck' in the print queue, preventing all other documents from printing, and right-clicking 'Cancel' does nothing.</p>
+                <p><strong>WHAT IT DOES:</strong><br>We are remotely stopping the Windows Print Spooler service. This is required because the service places a 'lock' on the corrupted print files, preventing us from deleting them while it is running.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>Open Services (services.msc), locate 'Print Spooler', right-click, and select 'Stop'.</p>
+                <div class="training-code console-font">Invoke-Command -ComputerName $Target -ScriptBlock { Stop-Service -Name Spooler -Force }</div>
+            </div>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 2: CLEAR THE PRINT QUEUE DIRECTORY</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>This is the core remediation step. Once the service is stopped, the corrupted data must be purged.</p>
+                <p><strong>WHAT IT DOES:</strong><br>We are forcefully deleting all files (usually .SHD and .SPL files) inside the system's PRINTERS directory. We use the '-File' flag to ensure we only delete the stuck jobs and don't accidentally delete the folder itself.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>Open File Explorer, navigate to 'C:\Windows\System32\spool\PRINTERS', select all files inside the folder, and delete them.</p>
+                <div class="training-code console-font">Invoke-Command -ComputerName $Target -ScriptBlock { Remove-Item -Path 'C:\Windows\System32\spool\PRINTERS\*' -File -Force }</div>
+            </div>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 3: RESTART THE PRINT SPOOLER SERVICE</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>This is the final step to bring the printing subsystem back online.</p>
+                <p><strong>WHAT IT DOES:</strong><br>We are starting the Print Spooler service back up. The user's print queue will now be completely empty, and they can attempt to print their document again.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>Open Services (services.msc), locate 'Print Spooler', right-click, and select 'Start'.</p>
+                <div class="training-code console-font">Invoke-Command -ComputerName $Target -ScriptBlock { Start-Service -Name Spooler }</div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">Technical Execution Pipeline</h2>
+            <ol>
+                <li><strong>Pre-Execution Validation:</strong> Executes a fast ICMP Ping to verify endpoint connectivity before attempting WinRM connections.</li>
+                <li><strong>Service Decoupling (WinRM):</strong> Establishes a remote PowerShell session over <strong>Port 5985 (HTTP)</strong> to execute a <code>Stop-Service</code> command against the <code>Spooler</code> service. The script intentionally pauses for 2 seconds to ensure the Windows kernel fully releases all file locks.</li>
+                <li><strong>File System Purge (WinRM):</strong> Re-uses the session to execute a <code>Remove-Item</code> command targeting <code>C:\Windows\System32\spool\PRINTERS\*</code>. It strictly uses the <code>-File</code> parameter to prevent accidental deletion of subdirectories.</li>
+                <li><strong>Service Restoration (WinRM):</strong> Executes a <code>Start-Service</code> command to bring the spooler back online, generating a fresh, empty queue for the user.</li>
+                <li><strong>Audit Logging:</strong> Logs the successful execution to the central UHDC CSV database via SMB (<strong>Port 445</strong>).</li>
+            </ol>
+        </section>
+
+        <section style="border-bottom: none;">
+            <h2 class="console-font">Q&A</h2>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Why do we have to stop the service first? Why not just delete the files?</div>
+                <div class="qa-answer">When a document is sent to the printer, the Print Spooler service creates temporary files (Shadow `.SHD` and Spool `.SPL` files) on the hard drive. While the service is actively trying to process those files, it places a strict file lock on them. If you try to delete them while the service is running, Windows will throw an "Access Denied - File in Use" error. Stopping the service drops the lock.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Will this delete the user's installed printers or printer drivers?</div>
+                <div class="qa-answer">No. This script only targets the <code>\spool\PRINTERS</code> directory, which exclusively holds temporary print jobs. The actual printer configurations, IP ports, and drivers are stored in the registry and the <code>\spool\drivers</code> directory, which are left completely untouched.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Does this fix issues where a network printer says "Offline"?</div>
+                <div class="qa-answer">Usually, no. If a printer says "Offline," it typically means the computer cannot communicate with the printer's IP address or the print server. This tool specifically fixes <em>local queue corruption</em>—where the computer can see the printer, but the internal Windows queue is jammed.</div>
+            </div>
+        </section>
+    </div>
+
+</body>
+</html>

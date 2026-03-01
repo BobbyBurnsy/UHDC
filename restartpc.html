@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UHDC Tools | RestartPC.ps1</title>
+    <style>
+        /* CORE VARIABLES & RESET */
+        :root {
+            --bg-dark: #1E1E1E;
+            --bg-darker: #111111;
+            --neon-green: #00FF00;
+            --neon-blue: #00A2ED;
+            --text-main: #DDDDDD;
+            --text-muted: #888888;
+            --border-color: #333333;
+            --danger-red: #FF4444;
+            --warning-yellow: #FFD700;
+            --training-gold: #FFD700;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        .console-font {
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        /* NAVIGATION BAR */
+        nav {
+            background-color: var(--bg-darker);
+            border-bottom: 1px solid var(--neon-blue);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .nav-logo {
+            color: var(--neon-blue);
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--neon-green);
+        }
+
+        /* LAYOUT & CONTAINERS */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            padding: 3rem 0 2rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        section {
+            padding: 2.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* TYPOGRAPHY & ACCENTS */
+        h1 {
+            font-size: 2.5rem;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--neon-green);
+            margin-bottom: 1.2rem;
+            font-weight: normal;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: #FFFFFF;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid var(--neon-blue);
+            padding-left: 10px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 1.2rem;
+            color: #CCCCCC;
+        }
+
+        strong {
+            color: #FFFFFF;
+        }
+
+        ul, ol {
+            margin-bottom: 1.5rem;
+            margin-left: 2rem;
+            color: #CCCCCC;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .highlight { color: var(--neon-green); }
+        .danger { color: var(--danger-red); font-weight: bold; }
+        .warning { color: var(--warning-yellow); }
+
+        /* TERMINAL WINDOW EFFECT */
+        .terminal-box {
+            background-color: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--neon-blue);
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin: 1.5rem 0;
+        }
+
+        .terminal-box p {
+            margin-bottom: 0.5rem;
+            font-size: 1.05rem;
+        }
+
+        /* TRAINING BLOCKS */
+        .training-block {
+            background-color: #1A1A1A;
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--training-gold);
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+        }
+
+        .training-header {
+            color: var(--training-gold);
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .training-code {
+            background-color: #0C0C0C;
+            color: var(--neon-green);
+            padding: 1rem;
+            border: 1px solid #333;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            overflow-x: auto;
+        }
+
+        /* QA BLOCKS */
+        .qa-block {
+            background-color: #252526;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            border-left: 3px solid var(--neon-green);
+        }
+
+        .qa-question {
+            font-weight: bold;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+            font-size: 1.15rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo console-font">UHDC.io</a>
+            <div class="nav-links console-font">
+                <a href="index.html">HOME</a>
+                <a href="about.html">ABOUT</a>
+                <a href="tools.html">TOOLS</a>
+                <a href="governance.html">GOVERNANCE</a>
+                <a href="https://github.com/bobbyburnsy" target="_blank" class="btn-nav">GITHUB REPO</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <p class="console-font" style="color: var(--text-muted); margin-bottom: 0.5rem;">\Tools\RestartPC.ps1</p>
+            <h1>RestartPC.ps1</h1>
+            <p class="console-font highlight">>>> POWER CONTROLS & SESSION MANAGEMENT</p>
+        </header>
+
+        <section style="padding-top: 1rem; border-bottom: none;">
+            <div class="terminal-box console-font">
+                <p style="color: var(--text-main);">========================================================</p>
+                <p style="color: var(--text-main);"> [UHDC] POWER CONTROLS: LAPTOP-US-4829</p>
+                <p style="color: var(--text-main); margin-bottom: 1.5rem;">========================================================</p>
+
+                <p style="color: var(--text-main);"> [UHDC] >>> Opening Graphical Power Menu...</p>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">  > User selected: 1. Standard Restart</p>
+
+                <p style="color: var(--text-main);"> [UHDC] [EXEC] Initiating standard restart on LAPTOP-US-4829...</p>
+                <p style="color: var(--neon-green);">[UHDC SUCCESS] Restart command sent.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">IT Pro Summary</h2>
+            <p>This is a GUI-driven power management tool that utilizes PsExec to bypass common WMI and RPC firewall restrictions. It generates a custom WPF interface, allowing the technician to select between graceful reboots, forced hardware shutdowns, and targeted user session logoffs, executing the native Windows commands under the <code>SYSTEM</code> context.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">When to Use This Tool</h2>
+
+            <h3>The Scenario</h3>
+            <p>A user's computer is completely frozen, their Start Menu won't open, or a rogue application is preventing them from clicking the reboot button. Alternatively, a user walked away from a shared kiosk machine without logging out, and the next user cannot access the system.</p>
+
+            <h3>The Fix</h3>
+            <p>The technician clicks "Restart Options" in the UHDC. A clean, dark-themed menu pops up offering multiple choices. If the user is actively on the phone, the tech selects "Standard Restart," which gives the user a 60-second on-screen warning to save their work. If the machine is totally locked up, the tech selects "Force Restart" to instantly drop all processes. If it's a shared kiosk, the tech selects "Force Logoff," which instantly kicks the previous user out and returns the machine to the Ctrl+Alt+Del screen without having to wait for a full hardware reboot.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">Interactive Training Engine</h2>
+            <p>When a junior technician runs this tool with <strong>Training Mode</strong> enabled, the UHDC pauses execution after they make a selection from the GUI menu. It displays a pop-up explaining the specific command they chose. Here is what the trainee sees depending on their selection:</p>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 1: STANDARD RESTART</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>Use this for general troubleshooting when a user is actively working on the PC. It gives them a 60-second warning to save their documents before the computer reboots.</p>
+                <p><strong>WHAT IT DOES:</strong><br>We use PsExec to run the native 'shutdown.exe' command on the target. The '/r' flag means restart, and '/t 60' sets a 60-second timer.</p>
+                <div class="training-code console-font">psexec.exe \\$Target -s shutdown /r /t 60</div>
+            </div>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 1: FORCE RESTART</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>Use this when a computer is completely frozen, stuck on a black screen, or a rogue application is preventing a standard restart. WARNING: The user will lose any unsaved work.</p>
+                <p><strong>WHAT IT DOES:</strong><br>We add the '/f' (force) flag and set the timer to '/t 0'. This tells Windows to instantly kill all running applications without waiting for them to close gracefully.</p>
+                <div class="training-code console-font">psexec.exe \\$Target -s shutdown /r /f /t 0</div>
+            </div>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 1: FORCE LOGOFF</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>Use this when a user's profile is locked up, their Start Menu won't open, or you need to kick a disconnected user off a shared workstation without rebooting the entire PC.</p>
+                <p><strong>WHAT IT DOES:</strong><br>Instead of 'shutdown.exe', we use PsExec to run 'rwinsta console'. This forcefully terminates the active Windows session (the 'console' session) and returns the PC to the Ctrl+Alt+Del login screen.</p>
+                <div class="training-code console-font">psexec.exe \\$Target -s rwinsta console</div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">Technical Execution Pipeline</h2>
+            <ol>
+                <li><strong>Pre-Execution Validation:</strong> Executes a fast ICMP Ping to verify endpoint connectivity.</li>
+                <li><strong>Dynamic UI Generation:</strong> Uses PowerShell to render a custom WPF XAML window, presenting the technician with a list of clearly defined power actions and descriptions.</li>
+                <li><strong>Payload Execution (RPC/SMB):</strong> Based on the selection, it dispatches <code>PsExec.exe</code> to the remote endpoint over <strong>Port 135 (RPC)</strong> and <strong>Port 445 (SMB)</strong>. It executes the native Windows binary (<code>shutdown.exe</code> or <code>rwinsta.exe</code>) under the <code>NT AUTHORITY\SYSTEM</code> context.</li>
+                <li><strong>Audit Logging:</strong> Logs the specific power action chosen (e.g., "Power Control Executed: ForceRestart") to the central UHDC CSV database.</li>
+            </ol>
+        </section>
+
+        <section style="border-bottom: none;">
+            <h2 class="console-font">Q&A</h2>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Why use PsExec instead of the native `Restart-Computer` PowerShell cmdlet?</div>
+                <div class="qa-answer">The native <code>Restart-Computer</code> cmdlet relies heavily on WMI (Windows Management Instrumentation). If a computer is severely frozen, the WMI service is often unresponsive, causing the command to fail. By using PsExec, we bypass WMI entirely and interact directly with the Service Control Manager to execute the native <code>shutdown.exe</code> binary, which is significantly more reliable on locked-up machines.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: What exactly is `rwinsta`?</div>
+                <div class="qa-answer"><code>rwinsta</code> stands for "Reset Windows Station." It is a legacy Terminal Services command. By passing the argument <code>console</code>, we are telling the operating system to instantly drop the physical console session (the user sitting at the keyboard). It is much faster than a full reboot because it leaves the Windows kernel and background services running while simply resetting the user interface.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: If I accidentally click "Standard Restart" on the wrong PC, can I stop it?</div>
+                <div class="qa-answer">Yes. Because the Standard Restart uses a 60-second timer (<code>/t 60</code>), you have a one-minute window to fix the mistake. Simply run the tool again against the same PC and select the <strong>"Abort Restart"</strong> option. This sends a <code>shutdown /a</code> command, which instantly cancels the pending reboot.</div>
+            </div>
+        </section>
+    </div>
+
+</body>
+</html>

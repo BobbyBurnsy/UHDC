@@ -1,0 +1,25 @@
+# ==========================================
+# UHDC .gitignore
+# Protects live data, configs, and logs
+# ==========================================
+
+# 1. Root Configuration & Announcements
+/config.json
+/MOTD.json
+
+# 2. Core Databases & Software Libraries
+/Core/UserHistory.json
+/Core/UserHistory.json.bak
+/Core/UserHistory.json.tmp
+/Core/SoftwareLibrary.json
+
+# 3. Audit Logs & Live Presence Heartbeats
+/Logs/*.csv
+/Logs/Presence/*.txt
+
+# 4. Executables (Compiled consoles and Sysinternals binaries)
+*.exe
+
+# 5. Folder Structure Preservation
+# Ensures Git tracks the empty folders via your .gitkeep files
+!.gitkeep

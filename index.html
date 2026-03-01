@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UHDC | Unified Help Desk Console</title>
+    <style>
+        /* CORE VARIABLES & RESET */
+        :root {
+            --bg-dark: #1E1E1E;
+            --bg-darker: #111111;
+            --neon-green: #00FF00;
+            --neon-blue: #00A2ED;
+            --text-main: #DDDDDD;
+            --text-muted: #888888;
+            --border-color: #333333;
+            --accent-purple: #B366FF;
+            --training-gold: #FFD700;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        .console-font {
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        /* NAVIGATION BAR */
+        nav {
+            background-color: var(--bg-darker);
+            border-bottom: 1px solid var(--neon-blue);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .nav-logo {
+            color: var(--neon-blue);
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--neon-green);
+        }
+
+        .nav-links .btn-nav {
+            border: 1px solid var(--neon-blue);
+            padding: 0.4rem 1rem;
+            border-radius: 4px;
+            color: var(--neon-blue);
+            transition: all 0.2s ease;
+        }
+
+        .nav-links .btn-nav:hover {
+            background-color: var(--neon-blue);
+            color: var(--bg-dark);
+            box-shadow: 0 0 10px rgba(0, 162, 237, 0.5);
+        }
+
+        /* LAYOUT & CONTAINERS */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 5rem 0 3rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        section {
+            padding: 4rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* TYPOGRAPHY & ACCENTS */
+        h1 {
+            font-size: 4rem;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+            letter-spacing: -1px;
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            color: var(--neon-green);
+            margin-bottom: 1.5rem;
+            font-weight: normal;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+            color: #CCCCCC;
+        }
+
+        .highlight {
+            color: var(--neon-green);
+        }
+
+        /* TERMINAL WINDOW EFFECT */
+        .terminal-box {
+            background-color: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--neon-blue);
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin: 2rem 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .terminal-box p {
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        /* FEATURE GRID */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .feature-card {
+            background-color: #1A1A1A;
+            border: 1px solid var(--border-color);
+            border-top: 4px solid var(--neon-blue);
+            padding: 2rem;
+            border-radius: 6px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .feature-card h3 {
+            color: #FFFFFF;
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card p {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 0;
+        }
+
+        /* BUTTONS */
+        .btn {
+            display: inline-block;
+            background-color: transparent;
+            color: var(--neon-green);
+            border: 1px solid var(--neon-green);
+            padding: 0.75rem 1.5rem;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 4px;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+
+        .btn:hover {
+            background-color: var(--neon-green);
+            color: var(--bg-dark);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+        }
+
+        /* RESPONSIVE MEDIA */
+        .feature-img {
+            width: 100%;
+            max-width: 900px;
+            height: auto;
+            display: block;
+            margin: 2rem auto;
+            border-radius: 8px;
+            border: 2px solid var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 162, 237, 0.2);
+        }
+
+        .podcast-container {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px dashed var(--border-color);
+        }
+
+        audio {
+            width: 100%;
+            margin-top: 1rem;
+            border-radius: 4px;
+        }
+
+        /* FOOTER */
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo console-font">UHDC.io</a>
+            <div class="nav-links console-font">
+                <a href="index.html" class="active">HOME</a>
+                <a href="about.html">ABOUT</a>
+                <a href="tools.html">TOOLS</a>
+                <a href="governance.html">GOVERNANCE</a>
+                <a href="https://github.com/bobbyburnsy" target="_blank" class="btn-nav">GITHUB REPO</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>Elevate Your Help Desk.</h1>
+            <p class="console-font highlight">>>> MULTI-THREADED POWERSHELL ORCHESTRATION</p>
+        </header>
+
+        <section id="about">
+            <h2 class="console-font">What is the UHDC?</h2>
+            <p>The <strong>Unified Help Desk Console (UHDC)</strong> is an advanced, centralized dashboard built to put the most powerful diagnostic and remediation tools behind a single pane of glass. It is designed specifically to accelerate <strong>live phone support</strong> and drastically reduce the time users spend on hold.</p>
+
+            <p>Instead of navigating slow web portals or walking frustrated users through complex command-line steps, technicians can instantly map users to their physical hardware, retrieve BitLocker keys, reset corrupted browser profiles, and push software deployments with a single button click.</p>
+
+            <div class="terminal-box console-font">
+                <p style="color: var(--text-main);">[UHDC] Resolving identity for 'jsmith'...</p>
+                <p style="color: var(--text-muted);">[UHDC] [SMART] Checking history for jsmith...</p>
+                <p style="color: var(--neon-green);">[UHDC] [MATCH] DESKTOP-HQ-9912 (jsmith)</p>
+                <p style="color: var(--neon-blue); margin-top: 1rem;">[INTEL] Auto-Filled Target PC: DESKTOP-HQ-9912 to Action panels.</p>
+            </div>
+        </section>
+
+        <section id="features">
+            <h2 class="console-font">Platform Pillars</h2>
+            <p>The UHDC bridges the gap between complex backend infrastructure and Tier 1 help desk usability, ensuring your team can resolve issues faster while continuously learning.</p>
+
+            <div class="feature-grid">
+                <div class="feature-card" style="border-top-color: var(--neon-green);">
+                    <h3 class="console-font">Live Call Resolution</h3>
+                    <p>Stop putting users on hold. The UHDC integrates Active Directory, Microsoft Intune, and WinRM into one interface. Fix print queues, force GPUpdates, and reset MFA methods instantly while actively talking to the user.</p>
+                </div>
+
+                <div class="feature-card" style="border-top-color: var(--training-gold);">
+                    <h3 class="console-font">Interactive Training Engine</h3>
+                    <p>Don't just click buttons. The built-in Training Mode pauses execution to teach junior technicians the underlying PowerShell and Graph API logic, transforming every support ticket into a micro-learning opportunity.</p>
+                </div>
+
+                <div class="feature-card" style="border-top-color: var(--accent-purple);">
+                    <h3 class="console-font">Enterprise Customization</h3>
+                    <p>Make it yours. The UHDC features a standalone Theme Manager that allows administrators to hot-swap the entire color profile of the console to match your specific IT department's vibe and branding.</p>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 3rem;">
+                <a href="tools.html" class="btn console-font">EXPLORE THE TOOLKIT</a>
+                <a href="about.html" class="btn console-font" style="margin-left: 1rem; border-color: var(--training-gold); color: var(--training-gold);">VIEW TRAINING ENGINE</a>
+            </div>
+        </section>
+
+        <section id="intel">
+            <h2 class="console-font">Architecture & Intel</h2>
+            <p>The UHDC utilizes a "Share-First" architecture, allowing a single central installation to power an entire IT department. See the workflow architecture below, and listen to our AI-generated Deep Dive for a complete breakdown of the platform's orchestration.</p>
+
+            <img src="uhdc-diagram.png" alt="UHDC Software Workflow Illustration" class="feature-img">
+
+            <div class="terminal-box console-font" style="border-left-color: var(--neon-green);">
+                <p style="color: var(--neon-blue);">[UHDC AUDIO TERMINAL] Loading Deep Dive Podcast...</p>
+                <p style="color: var(--text-muted);">> Format: AI-Generated Overview | Status: Ready</p>
+
+                <div class="podcast-container">
+                    <p class="highlight">Press Play to Initialize Audio Overview:</p>
+                    <audio controls>
+                        <source src="uhdc-podcast.mp3" type="audio/mpeg">
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+            </div>
+        </section>
+
+        <section id="licensing" style="border-bottom: none;">
+            <h2 class="console-font">Enterprise Grade. Community Accessible.</h2>
+            <p>We believe powerful IT orchestration shouldn't be locked behind massive corporate paywalls. Tools that save technicians time and reduce user frustration should be accessible to the teams that need them the most.</p>
+            <p>That is why full access to the Unified Help Desk Console is <strong>100% free for any business managing fewer than 1,000 endpoints</strong>. No trial periods, no hidden telemetry, just raw administrative power.</p>
+
+            <div class="terminal-box console-font" style="border-left-color: var(--accent-purple);">
+                <p style="color: var(--text-main);">> [UHDC LICENSE CHECK] Querying Active Directory...</p>
+                <p style="color: var(--text-muted);">> Discovered active computer objects: 842</p>
+                <p style="color: var(--text-main); margin-top: 1rem;">> Validating Tier...</p>
+                <p style="color: var(--neon-green);">> [OK] LICENSE APPROVED: COMMUNITY FREE TIER.</p>
+            </div>
+
+            <div style="text-align: center;">
+                <a href="https://github.com/bobbyburnsy" target="_blank" class="btn console-font" style="border-color: var(--accent-purple); color: var(--accent-purple);">DOWNLOAD FROM GITHUB</a>
+            </div>
+        </section>
+
+    </div>
+
+    <footer>
+        <p class="console-font">2026 Unified Help Desk Console. Engineered for Enterprise IT.</p>
+    </footer>
+
+</body>
+</html>

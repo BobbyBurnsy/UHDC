@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UHDC Tools | SmartUserSearch.ps1</title>
+    <style>
+        /* CORE VARIABLES & RESET */
+        :root {
+            --bg-dark: #1E1E1E;
+            --bg-darker: #111111;
+            --neon-green: #00FF00;
+            --neon-blue: #00A2ED;
+            --text-main: #DDDDDD;
+            --text-muted: #888888;
+            --border-color: #333333;
+            --danger-red: #FF4444;
+            --warning-yellow: #FFD700;
+            --training-gold: #FFD700;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        .console-font {
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        /* NAVIGATION BAR */
+        nav {
+            background-color: var(--bg-darker);
+            border-bottom: 1px solid var(--neon-blue);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .nav-logo {
+            color: var(--neon-blue);
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--neon-green);
+        }
+
+        /* LAYOUT & CONTAINERS */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            padding: 3rem 0 2rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        section {
+            padding: 2.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* TYPOGRAPHY & ACCENTS */
+        h1 {
+            font-size: 2.5rem;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--neon-green);
+            margin-bottom: 1.2rem;
+            font-weight: normal;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: #FFFFFF;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid var(--neon-blue);
+            padding-left: 10px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 1.2rem;
+            color: #CCCCCC;
+        }
+
+        strong {
+            color: #FFFFFF;
+        }
+
+        ul, ol {
+            margin-bottom: 1.5rem;
+            margin-left: 2rem;
+            color: #CCCCCC;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .highlight { color: var(--neon-green); }
+        .danger { color: var(--danger-red); font-weight: bold; }
+        .warning { color: var(--warning-yellow); }
+
+        /* TERMINAL WINDOW EFFECT */
+        .terminal-box {
+            background-color: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--neon-blue);
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin: 1.5rem 0;
+        }
+
+        .terminal-box p {
+            margin-bottom: 0.5rem;
+            font-size: 1.05rem;
+        }
+
+        /* TRAINING BLOCKS */
+        .training-block {
+            background-color: #1A1A1A;
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--training-gold);
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+        }
+
+        .training-header {
+            color: var(--training-gold);
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .training-code {
+            background-color: #0C0C0C;
+            color: var(--neon-green);
+            padding: 1rem;
+            border: 1px solid #333;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            overflow-x: auto;
+        }
+
+        /* QA BLOCKS */
+        .qa-block {
+            background-color: #252526;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            border-left: 3px solid var(--neon-green);
+        }
+
+        .qa-question {
+            font-weight: bold;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+            font-size: 1.15rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo console-font">UHDC.io</a>
+            <div class="nav-links console-font">
+                <a href="index.html">HOME</a>
+                <a href="about.html">ABOUT</a>
+                <a href="tools.html">TOOLS</a>
+                <a href="governance.html">GOVERNANCE</a>
+                <a href="https://github.com/bobbyburnsy" target="_blank" class="btn-nav">GITHUB REPO</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <p class="console-font" style="color: var(--text-muted); margin-bottom: 0.5rem;">\Core\SmartUserSearch.ps1</p>
+            <h1>SmartUserSearch.ps1</h1>
+            <p class="console-font highlight">>>> ACTIVE DIRECTORY INTELLIGENCE ENGINE</p>
+        </header>
+
+        <section style="padding-top: 1rem; border-bottom: none;">
+            <div class="terminal-box console-font">
+                <p style="color: var(--text-main);">========================================================</p>
+                <p style="color: var(--text-main);"> [UHDC] ACCOUNT REPORT: jsmith</p>
+                <p style="color: var(--text-main); margin-bottom: 1.5rem;">========================================================</p>
+
+                <p style="color: var(--text-main);"> Name:       John Smith</p>
+                <p style="color: var(--text-main);"> Title:      Senior Financial Analyst</p>
+                <p style="color: var(--text-main);"> Status:     Active</p>
+                <p style="color: var(--danger-red); margin-bottom: 1.5rem;"> Locked:     YES (LOCKED)</p>
+
+                <p style="color: var(--text-main);"> --- Password & Logon ---</p>
+                <p style="color: var(--text-main);"> Password Set:  11/20/2025 08:14:22</p>
+                <p style="color: var(--danger-red); margin-bottom: 1.5rem;"> [UHDC STATUS] Days until expiry: !!! EXPIRED (2 days ago) !!!</p>
+
+                <p style="color: var(--text-main);"> --- Known Locations ---</p>
+                <p style="color: var(--text-muted);"> [1] LAPTOP-US-4829 (Seen: 2026-02-25 09:15)</p>
+                <p style="color: var(--text-muted);"> [2] DESKTOP-HQ-9912 (Seen: 2026-02-23 14:22)</p>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;"> [3] KIOSK-CONF-04 (Seen: 2026-02-20 11:05)</p>
+
+                <p style="color: var(--neon-blue);">[INTEL] Auto-Filled Target PC: LAPTOP-US-4829 to Action panels.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">IT Pro Summary</h2>
+            <p>This is the core data aggregation engine for the Unified Help Desk Console. It acts as the "tip of the spear" for live phone support. It executes a dual-pronged query—pulling real-time identity and security metrics directly from Active Directory, while simultaneously parsing the local <code>UserHistory.json</code> database to instantly map the user to their physical hardware.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">When to Use This Tool</h2>
+
+            <h3>The Scenario</h3>
+            <p>A user calls the help desk complaining that they "can't log into the VPN" or "can't access their email." A Tier 1 technician might immediately start trying to reinstall the VPN client, completely missing the root cause because looking up their full security profile in standard AD tools is tedious. Furthermore, the user is working from a shared conference room today and has no idea what the computer name is, stalling the troubleshooting process.</p>
+
+            <h3>The Fix</h3>
+            <p>The technician types the user's name into the console and hits enter. <code>SmartUserSearch.ps1</code> instantly cross-references their AD profile. The console immediately flashes a high-visibility text alert: <span class="console-font danger">!!! EXPIRED (2 days ago) !!!</span> and shows <span class="console-font danger">YES (LOCKED)</span>.</p>
+            <p>The technician instantly knows the issue isn't the VPN client; the user's password expired over the weekend, and they locked themselves out trying to guess it. Furthermore, the script automatically lists the last 3 computers the user logged into. It takes the most recent one (<code>LAPTOP-US-4829</code>) and magically auto-fills it into the "Target PC" box in the console UI. The technician is instantly ready to push a remote GPUpdate or unlock the account without ever asking the user for their hostname.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">Interactive Training Engine</h2>
+            <p>When a junior technician runs this tool with <strong>Training Mode</strong> enabled, the UHDC pauses execution at each critical phase. It displays a pop-up explaining <em>why</em> the action is necessary, what the in-person equivalent would be, and reveals the exact PowerShell code being executed under the hood. Here is what the trainee sees during a Smart Search:</p>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 1: CORRELATE USER TO COMPUTER</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>This is the first step in any remote support scenario. A user calls in with an issue, but they don't know their computer name, making it impossible to remote in or push fixes.</p>
+                <p><strong>WHAT IT DOES:</strong><br>We are parsing the central 'UserHistory.json' database. We check if your input matches a known Username. If it does, we pull a list of the most recent PCs they logged into. We then use a special GUI tag '[GUI:UPDATE_TARGET...]' to automatically fill the 'Target PC' boxes on the right side of the console so you are instantly ready to work.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>Asking the user, 'Can you read me the asset tag sticker on the bottom of your laptop?' or having them open the Start Menu, type 'cmd', and run the 'hostname' command.</p>
+                <div class="training-code console-font">$raw = Get-Content $HistoryFile -Raw | ConvertFrom-Json<br>$userHistory = $raw | Where-Object { $_.User -eq $TargetUser }<br>Write-Host "[GUI:UPDATE_TARGET:$($userHistory[0].Computer)]"</div>
+            </div>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 2: QUERY AD & CALCULATE PASSWORD EXPIRATION</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>Use this to instantly verify if an account is locked out, disabled, or if their password is about to expire. It also checks if they have the correct security groups (like VPN or Admin access).</p>
+                <p><strong>WHAT IT DOES:</strong><br>We use 'Get-ADUser' to pull the account details. Then, we do some math: We query the domain's default password policy ('Get-ADDefaultDomainPasswordPolicy') to find the 'MaxPasswordAge' (e.g., 90 days). We add those 90 days to the user's 'PasswordLastSet' date, and subtract today's date to tell you exactly how many days they have left before they are locked out.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>Opening Active Directory Users and Computers (ADUC), searching for the user, checking the 'Account' tab to see if the 'Unlock account' box is checked, and clicking the 'Member Of' tab to read through their assigned groups.</p>
+                <div class="training-code console-font">$adObj = Get-ADUser -Identity $TargetUser -Properties LockedOut, PasswordLastSet, MemberOf<br>$policy = Get-ADDefaultDomainPasswordPolicy<br>$expDate = $adObj.PasswordLastSet.AddDays($policy.MaxPasswordAge.Days)</div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">Technical Execution Pipeline</h2>
+            <ol>
+                <li><strong>JSON Database Parsing (SMB):</strong> Bypasses Active Directory entirely for the hardware lookup. It connects to the network share over <strong>Port 445 (SMB)</strong>, validates the health of the <code>UserHistory.json</code> file, and deserializes the entire object array into memory.</li>
+                <li><strong>Identity Correlation:</strong> Iterates through the JSON array, filtering exclusively for records matching the provided Target User string. It utilizes a hashtable logic to deduplicate the results, ensuring it outputs a clean list of unique workstations the user has logged into, ranked by timestamp.</li>
+                <li><strong>Active Directory Query (LDAP):</strong> Executes a targeted <code>Get-ADUser</code> query over <strong>Port 389 (LDAP)</strong> or <strong>Port 636 (LDAPS)</strong>, pulling an expanded property set (Office, Title, Department, LockedOut, PasswordLastSet, MemberOf).</li>
+                <li><strong>Security & Expiry Calculation:</strong> Automatically queries the domain's default password policy to dynamically calculate the maximum password age. It calculates the days left and triggers high-visibility UI alerts if the account is expiring or expired.</li>
+                <li><strong>Group Truncation & UI Handoff:</strong> Filters the user's groups against a RegEx keywords string (e.g., <code>M365|VPN|Admin</code>) to only display high-value security groups in the console HUD. Finally, it outputs a hidden <code>[GUI:UPDATE_TARGET:...]</code> string that the frontend catches to automatically populate the "Target PC" text box.</li>
+            </ol>
+        </section>
+
+        <section style="border-bottom: none;">
+            <h2 class="console-font">Q&A</h2>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: What network ports does this script require?</div>
+                <div class="qa-answer">The script requires <strong>Port 445 (SMB)</strong> to read the <code>UserHistory.json</code> map from the network share. It relies on <strong>Port 389/636 (LDAP)</strong> to query Active Directory for the user's profile and the domain's default password policy.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: If a user belongs to 50 different Active Directory groups, will this script flood the console UI with all of them?</div>
+                <div class="qa-answer">No, by design. The script uses a specific regex filter to only display critical access groups (like VPN, Admin, or specific software licenses). It explicitly hides standard domain groups to keep the technician's Heads Up Display clean, noting at the bottom: <em>...plus [X] other standard groups</em>.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Where does the "Days until expiry" number come from?</div>
+                <div class="qa-answer">It is dynamically calculated. The script queries the domain's default password policy to find the exact "Maximum Password Age" (e.g., 90 days). It then takes the user's <code>PasswordLastSet</code> timestamp, adds 90 days to it, and subtracts the current date. This guarantees the expiration warning is always perfectly accurate.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: What does the [GUI:UPDATE_TARGET:...] text at the bottom do?</div>
+                <div class="qa-answer">It is a bridge between the PowerShell backend and the graphical frontend. The script outputs the most recent computer the user logged into in a specific bracketed format. The console's underlying C# code is listening for that string; when it sees it, it automatically takes the computer name and pastes it into the "Target PC" box in the UI, saving the technician from having to type or copy/paste it manually.</div>
+            </div>
+        </section>
+    </div>
+
+</body>
+</html>

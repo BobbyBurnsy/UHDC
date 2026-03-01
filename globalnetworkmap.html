@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UHDC Tools | GlobalNetworkMap.ps1</title>
+    <style>
+        /* CORE VARIABLES & RESET */
+        :root {
+            --bg-dark: #1E1E1E;
+            --bg-darker: #111111;
+            --neon-green: #00FF00;
+            --neon-blue: #00A2ED;
+            --text-main: #DDDDDD;
+            --text-muted: #888888;
+            --border-color: #333333;
+            --danger-red: #FF4444;
+            --warning-yellow: #FFD700;
+            --training-gold: #FFD700;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        .console-font {
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        /* NAVIGATION BAR */
+        nav {
+            background-color: var(--bg-darker);
+            border-bottom: 1px solid var(--neon-blue);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .nav-logo {
+            color: var(--neon-blue);
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--neon-green);
+        }
+
+        /* LAYOUT & CONTAINERS */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            padding: 3rem 0 2rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        section {
+            padding: 2.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* TYPOGRAPHY & ACCENTS */
+        h1 {
+            font-size: 2.5rem;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--neon-green);
+            margin-bottom: 1.2rem;
+            font-weight: normal;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: #FFFFFF;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid var(--neon-blue);
+            padding-left: 10px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 1.2rem;
+            color: #CCCCCC;
+        }
+
+        strong {
+            color: #FFFFFF;
+        }
+
+        ul, ol {
+            margin-bottom: 1.5rem;
+            margin-left: 2rem;
+            color: #CCCCCC;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .highlight { color: var(--neon-green); }
+        .danger { color: var(--danger-red); font-weight: bold; }
+        .warning { color: var(--warning-yellow); }
+
+        /* TERMINAL WINDOW EFFECT */
+        .terminal-box {
+            background-color: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--neon-blue);
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin: 1.5rem 0;
+        }
+
+        .terminal-box p {
+            margin-bottom: 0.5rem;
+            font-size: 1.05rem;
+        }
+
+        /* TRAINING BLOCKS */
+        .training-block {
+            background-color: #1A1A1A;
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--training-gold);
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+        }
+
+        .training-header {
+            color: var(--training-gold);
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .training-code {
+            background-color: #0C0C0C;
+            color: var(--neon-green);
+            padding: 1rem;
+            border: 1px solid #333;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            overflow-x: auto;
+        }
+
+        /* QA BLOCKS */
+        .qa-block {
+            background-color: #252526;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            border-left: 3px solid var(--neon-green);
+        }
+
+        .qa-question {
+            font-weight: bold;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+            font-size: 1.15rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo console-font">UHDC.io</a>
+            <div class="nav-links console-font">
+                <a href="index.html">HOME</a>
+                <a href="about.html">ABOUT</a>
+                <a href="tools.html">TOOLS</a>
+                <a href="governance.html">GOVERNANCE</a>
+                <a href="https://github.com/bobbyburnsy" target="_blank" class="btn-nav">GITHUB REPO</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <p class="console-font" style="color: var(--text-muted); margin-bottom: 0.5rem;">\Core\GlobalNetworkMap.ps1</p>
+            <h1>GlobalNetworkMap.ps1</h1>
+            <p class="console-font highlight">>>> ASSET TRACKING & TELEMETRY ENGINE</p>
+        </header>
+
+        <section style="padding-top: 1rem; border-bottom: none;">
+            <div class="terminal-box console-font">
+                <p style="color: var(--text-main);">=========================================</p>
+                <p style="color: var(--text-main);">       [UHDC] GLOBAL NETWORK MAPPER      </p>
+                <p style="color: var(--text-main); margin-bottom: 1.5rem;">=========================================</p>
+
+                <p style="color: var(--warning-yellow);"> [UHDC] [!] Scope limited to: Active Windows 10/11 Workstations</p>
+                <p style="color: var(--warning-yellow); margin-bottom: 1.5rem;"> [UHDC] [!] Mode: Additive (Preserves History)</p>
+
+                <p style="color: var(--text-main);"> [UHDC] [1/3] Loading Database...</p>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">  > [OK] Loaded 4,102 historical entries.</p>
+
+                <p style="color: var(--text-main);"> [UHDC] [2/3] Fetching Computer List from AD...</p>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">  > [OK] Found 1,250 target workstations.</p>
+
+                <p style="color: var(--text-muted);"> [UHDC] [14%] NEW: jsmith found on LAPTOP-US-4829</p>
+                <p style="color: var(--text-muted);"> [UHDC] [28%] NEW: mscott found on DESKTOP-HQ-9912</p>
+                <p style="color: var(--text-main); margin-top: 1.5rem; margin-bottom: 1.5rem;"> [UHDC] [3/3] Finalizing Database...</p>
+
+                <p style="color: var(--neon-blue);">[UHDC SUCCESS] Map Complete!</p>
+                <p style="color: var(--neon-green);">> Total DB Entries: 4,104 | New Connections: 2</p>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">IT Pro Summary</h2>
+            <p>This is a background telemetry and asset-mapping engine. It enumerates the Active Directory environment for supported workstations, polls them concurrently to identify active user sessions, and compiles a centralized, highly resilient JSON database. This creates an instant "User-to-Computer" lookup table for the help desk, utilizing an additive composite key structure to accurately track users across multiple devices without data overwrites.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">When to Use This Tool</h2>
+
+            <h3>The Scenario</h3>
+            <p>Active Directory natively lacks a fast, reliable way to show which specific workstation a user is currently logged into. When a user calls the help desk or submits a vague ticket like "My computer is acting up," technicians waste valuable minutes trying to walk the user through finding their hostname sticker or navigating system settings before they can even connect.</p>
+
+            <h3>The Fix</h3>
+            <p><code>GlobalNetworkMap.ps1</code> runs on a weekly schedule to silently sweep the network and update the master JSON tracking database. Now, when a technician pulls up the Active Directory intelligence search within the UHDC, the console cross-references this database to display the active computer name right alongside the user's AD profile. The technician gets the exact hostname instantly, completely bypassing the "How do I find my computer name?" conversation.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">Interactive Training Engine</h2>
+            <p>When a junior technician runs this tool with <strong>Training Mode</strong> enabled, the UHDC pauses execution at each critical phase. It displays a pop-up explaining <em>why</em> the action is necessary, what the in-person equivalent would be, and reveals the exact PowerShell code being executed under the hood. Here is what the trainee sees during a Global Map compilation:</p>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 1: LOAD EXISTING DATABASE</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>This tool is restricted to Master Admins and is typically run twice a week (e.g., Mondays and Thursdays at 10 AM) to build and maintain the global asset map used by the Smart User Search.</p>
+                <p><strong>WHAT IT DOES:</strong><br>We are loading the central 'UserHistory.json' database into memory. We use a composite key ('User-Computer') to ensure that if a user logs into a second laptop, it adds a new record rather than overwriting their primary desktop.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>Opening a master Excel spreadsheet on a shared network drive that tracks which employee is assigned to which physical desk or computer.</p>
+                <div class="training-code console-font">$raw = Get-Content $HistoryFile -Raw | ConvertFrom-Json<br>foreach ($entry in $raw) { $masterDB["$($entry.User)-$($entry.Computer)"] = $entry }</div>
+            </div>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 2: QUERY ACTIVE DIRECTORY FOR WORKSTATIONS</div>
+                <p><strong>WHAT IT DOES:</strong><br>We are querying Active Directory for all enabled computer objects running Windows 10 or Windows 11. This LDAP filter ensures we only target active client endpoints, filtering out servers, disabled PCs, and stale objects so we don't waste time scanning them.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>Opening Active Directory Users and Computers (ADUC), creating a custom saved query for 'Operating System starts with Windows 10', and exporting the list to a CSV file to know which desks to check.</p>
+                <div class="training-code console-font">$filter = "Enabled -eq 'true' -and (OperatingSystem -like '*Windows 10*' -or OperatingSystem -like '*Windows 11*')"<br>$computers = Get-ADComputer -Filter $filter | Select-Object -ExpandProperty Name</div>
+            </div>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 3: PING SWEEP & WMI USER QUERY</div>
+                <p><strong>WHAT IT DOES:</strong><br>For every computer found in AD, we send a fast ping. If it responds, we establish a WMI connection to query the 'Win32_ComputerSystem' class and extract the 'UserName' property to see who is currently logged in. We then update their 'LastSeen' timestamp in our memory dictionary.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>Walking the floor, going desk to desk, wiggling the mouse on every active computer, and writing down the username displayed on the lock screen.</p>
+                <div class="training-code console-font">if (Test-Connection -ComputerName $pc -Count 1 -Quiet) {<br>&nbsp;&nbsp;&nbsp;&nbsp;$compInfo = Get-CimInstance -ClassName Win32_ComputerSystem -ComputerName $pc<br>&nbsp;&nbsp;&nbsp;&nbsp;$rawUser = $compInfo.UserName<br>}</div>
+            </div>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 4: ATOMIC DATABASE SAVE</div>
+                <p><strong>WHAT IT DOES:</strong><br>We are converting our updated memory dictionary back into JSON format. To prevent database corruption if the script crashes or the network drops mid-save, we write the data to a '.tmp' file first, and then instantly swap it with the live 'UserHistory.json' file.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>Saving your updated Excel tracker as 'Tracker_New.xlsx', deleting the old 'Tracker.xlsx', and renaming the new file to replace it.</p>
+                <div class="training-code console-font">Set-Content -Path $TempFile -Value $jsonOutput -Force<br>Move-Item -Path $TempFile -Destination $HistoryFile -Force</div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">Technical Execution Pipeline</h2>
+            <ol>
+                <li><strong>Database Initialization (SMB):</strong> Connects to the central network share via <strong>Port 445 (SMB)</strong>. Evaluates the health of the existing <code>UserHistory.json</code> database. If it passes the byte-length health check, it safely duplicates it to a <code>.bak</code> file before making any changes.</li>
+                <li><strong>Directory Enumeration (LDAP):</strong> Uses the <code>Get-ADComputer</code> cmdlet to query Active Directory over <strong>Port 389 (LDAP)</strong> or <strong>Port 636 (LDAPS)</strong>. It utilizes a strict <code>-Filter</code> to isolate only active, enabled endpoints running Windows 10 or Windows 11, deliberately excluding servers and deprecated operating systems from the scan loop.</li>
+                <li><strong>Endpoint Polling (ICMP & WSMan):</strong> Iterates through the AD array. First, it uses an ICMP ping to verify the endpoint is online. If responsive, it executes a <code>Get-CimInstance</code> query against <code>Win32_ComputerSystem</code> over <strong>Port 5985 (WSMan/WinRM)</strong> to extract the currently logged-on user.</li>
+                <li><strong>Data Transformation & Logic:</strong> Cleans the raw domain strings (<code>DOMAIN\User</code> becomes <code>User</code>) and generates a composite key (<code>$cleanUser-$pc</code>). This explicitly prevents a user who logs into a conference room PC from overwriting their primary laptop record in the database.</li>
+                <li><strong>Atomic Auto-Saving (SMB):</strong> To protect against network drops or script termination, it executes an atomic save operation every 50 loops over <strong>Port 445 (SMB)</strong>. It serializes the array to a <code>.tmp</code> file first, confirms the JSON payload is valid, and only then overwrites the live production <code>.json</code> file.</li>
+            </ol>
+        </section>
+
+        <section style="border-bottom: none;">
+            <h2 class="console-font">Q&A</h2>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: What network ports are required for this engine to map the network?</div>
+                <div class="qa-answer">This script is network-intensive. It requires <strong>Port 389/636 (LDAP)</strong> to query Active Directory for the computer list. It uses <strong>Port 5985 (WSMan/HTTP)</strong> to query WMI on the target endpoints for the logged-on user. Finally, it uses <strong>Port 445 (SMB)</strong> to read, backup, and save the central JSON database on the network share.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: What happens if a technician closes the console or the server hosting the script reboots while it is halfway through scanning 2,000 computers?</div>
+                <div class="qa-answer">The database will not corrupt. The script utilizes an atomic auto-save block. It writes the data in memory to a temporary file (<code>.tmp</code>), validates it, and then instantly swaps it with the live file. The most data we would ever lose from an unexpected termination is the last 49 endpoints scanned. Furthermore, an automatic <code>.bak</code> file is generated at the very start of the execution.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Does this script overwrite existing records? For example, if a user goes on vacation and their PC is offline during the weekly scan, do they disappear from the AD search?</div>
+                <div class="qa-answer">No, the script runs in "Additive Mode." When it loads the existing database at the start, it pulls all historical records into memory. If a PC is offline and fails the ping check, the script simply skips it, but the historical record remains safely in the master array and is saved back to the disk.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Why do we use a composite key (`User-Computer`) instead of just using the Username as the database key?</div>
+                <div class="qa-answer">If we used just the Username, the database would only remember the <em>last</em> computer a user logged into. If a user has a desktop and a laptop, or occasionally logs into a shared kiosk, the composite key allows the database to store and track all of their active devices simultaneously for accurate AD lookups.</div>
+            </div>
+        </section>
+    </div>
+
+</body>
+</html>

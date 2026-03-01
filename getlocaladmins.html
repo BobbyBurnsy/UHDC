@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UHDC Tools | Get-LocalAdmins.ps1</title>
+    <style>
+        /* CORE VARIABLES & RESET */
+        :root {
+            --bg-dark: #1E1E1E;
+            --bg-darker: #111111;
+            --neon-green: #00FF00;
+            --neon-blue: #00A2ED;
+            --text-main: #DDDDDD;
+            --text-muted: #888888;
+            --border-color: #333333;
+            --danger-red: #FF4444;
+            --warning-yellow: #FFD700;
+            --training-gold: #FFD700;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        .console-font {
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        /* NAVIGATION BAR */
+        nav {
+            background-color: var(--bg-darker);
+            border-bottom: 1px solid var(--neon-blue);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .nav-logo {
+            color: var(--neon-blue);
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--neon-green);
+        }
+
+        /* LAYOUT & CONTAINERS */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            padding: 3rem 0 2rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        section {
+            padding: 2.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* TYPOGRAPHY & ACCENTS */
+        h1 {
+            font-size: 2.5rem;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--neon-green);
+            margin-bottom: 1.2rem;
+            font-weight: normal;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: #FFFFFF;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid var(--neon-blue);
+            padding-left: 10px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 1.2rem;
+            color: #CCCCCC;
+        }
+
+        strong {
+            color: #FFFFFF;
+        }
+
+        ul, ol {
+            margin-bottom: 1.5rem;
+            margin-left: 2rem;
+            color: #CCCCCC;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .highlight { color: var(--neon-green); }
+        .danger { color: var(--danger-red); font-weight: bold; }
+        .warning { color: var(--warning-yellow); }
+
+        /* TERMINAL WINDOW EFFECT */
+        .terminal-box {
+            background-color: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--neon-blue);
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin: 1.5rem 0;
+        }
+
+        .terminal-box p {
+            margin-bottom: 0.5rem;
+            font-size: 1.05rem;
+        }
+
+        /* TRAINING BLOCKS */
+        .training-block {
+            background-color: #1A1A1A;
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--training-gold);
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+        }
+
+        .training-header {
+            color: var(--training-gold);
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .training-code {
+            background-color: #0C0C0C;
+            color: var(--neon-green);
+            padding: 1rem;
+            border: 1px solid #333;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            overflow-x: auto;
+        }
+
+        /* QA BLOCKS */
+        .qa-block {
+            background-color: #252526;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            border-left: 3px solid var(--neon-green);
+        }
+
+        .qa-question {
+            font-weight: bold;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+            font-size: 1.15rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo console-font">UHDC.io</a>
+            <div class="nav-links console-font">
+                <a href="index.html">HOME</a>
+                <a href="about.html">ABOUT</a>
+                <a href="tools.html">TOOLS</a>
+                <a href="governance.html">GOVERNANCE</a>
+                <a href="https://github.com/bobbyburnsy" target="_blank" class="btn-nav">GITHUB REPO</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <p class="console-font" style="color: var(--text-muted); margin-bottom: 0.5rem;">\Tools\Get-LocalAdmins.ps1</p>
+            <h1>Get-LocalAdmins.ps1</h1>
+            <p class="console-font highlight">>>> SECURITY AUDIT & PRIVILEGE VERIFICATION</p>
+        </header>
+
+        <section style="padding-top: 1rem; border-bottom: none;">
+            <div class="terminal-box console-font">
+                <p style="color: var(--text-main);">========================================</p>
+                <p style="color: var(--text-main);"> [UHDC] LOCAL ADMINISTRATOR AUDIT</p>
+                <p style="color: var(--text-main); margin-bottom: 1.5rem;">========================================</p>
+
+                <p style="color: var(--text-main);"> [UHDC] [i] Connecting to LAPTOP-US-4829 via WinRM...</p>
+
+                <p style="color: var(--text-main); margin-top: 1rem;"> --- Administrators Group Members ---</p>
+                <p style="color: var(--neon-green);">  > LAPTOP-US-4829\Administrator</p>
+                <p style="color: var(--text-muted);">    Type:   User</p>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">    Source: Local</p>
+
+                <p style="color: var(--neon-green);">  > ACME\Domain Admins</p>
+                <p style="color: var(--text-muted);">    Type:   Group</p>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">    Source: ActiveDirectory</p>
+
+                <p style="color: var(--danger-red);">  > ACME\jsmith</p>
+                <p style="color: var(--text-muted);">    Type:   User</p>
+                <p style="color: var(--text-muted);">    Source: ActiveDirectory</p>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">IT Pro Summary</h2>
+            <p>This is a targeted security auditing tool that leverages WinRM to query the local Security Account Manager (SAM) database of a remote endpoint. It extracts all members of the built-in "Administrators" group, explicitly identifying whether the privileged entity is a local machine account, an Active Directory user, or an Active Directory security group.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">When to Use This Tool</h2>
+
+            <h3>The Scenario</h3>
+            <p>A user submits a ticket claiming they cannot install a required piece of software because they are being prompted for an admin password. Alternatively, your security team flags a machine for suspicious activity and asks you to verify if the user has somehow bypassed standard policies to grant themselves unauthorized local administrator rights.</p>
+
+            <h3>The Fix</h3>
+            <p>Instead of remoting into the machine, opening Computer Management, and interrupting the user, the technician clicks "Local Admins" in the UHDC. The script instantly returns the exact membership list of the local Administrators group. The technician can immediately verify if the user's AD account (e.g., <code>ACME\jsmith</code>) is present, or confirm that only the standard <code>Domain Admins</code> and LAPS-managed <code>Administrator</code> accounts have access.</p>
+        </section>
+
+        <section>
+            <h2 class="console-font">Interactive Training Engine</h2>
+            <p>When a junior technician runs this tool with <strong>Training Mode</strong> enabled, the UHDC pauses execution at each critical phase. It displays a pop-up explaining <em>why</em> the action is necessary, what the in-person equivalent would be, and reveals the exact PowerShell code being executed under the hood. Here is what the trainee sees during a Local Admin Audit:</p>
+
+            <div class="training-block">
+                <div class="training-header console-font">[TRAINING] STEP 1: QUERY LOCAL ADMINISTRATORS GROUP</div>
+                <p><strong>WHEN TO USE THIS:</strong><br>Use this when auditing a machine for unauthorized privilege escalation, verifying that LAPS (Local Administrator Password Solution) is functioning, or confirming a specific user/group has the necessary rights to install software.</p>
+                <p><strong>WHAT IT DOES:</strong><br>We are establishing a WinRM session to query the local SAM (Security Account Manager) database of the target machine. We specifically target the built-in 'Administrators' group and return its members, identifying whether they are local accounts or Active Directory objects.</p>
+                <p><strong>IN-PERSON EQUIVALENT:</strong><br>Right-click the Start Menu, select 'Computer Management' (compmgmt.msc), expand 'Local Users and Groups', click 'Groups', and double-click the 'Administrators' group to view its members.</p>
+                <div class="training-code console-font">Invoke-Command -ComputerName $Target -ScriptBlock { Get-LocalGroupMember -Group 'Administrators' | Select-Object Name, PrincipalSource, ObjectClass }</div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="console-font">Technical Execution Pipeline</h2>
+            <ol>
+                <li><strong>Pre-Execution Validation:</strong> Executes a fast ICMP Ping to verify endpoint connectivity before attempting WinRM connections.</li>
+                <li><strong>SAM Database Query (WinRM):</strong> Establishes a remote PowerShell session over <strong>Port 5985 (HTTP)</strong>. It executes the <code>Get-LocalGroupMember</code> cmdlet, specifically targeting the <code>Administrators</code> group.</li>
+                <li><strong>Object Parsing:</strong> The script pipes the raw output into a <code>Select-Object</code> array to extract the <code>Name</code>, <code>PrincipalSource</code>, and <code>ObjectClass</code> properties, stripping out the hidden <code>PSComputerName</code> metadata that <code>Invoke-Command</code> automatically appends.</li>
+                <li><strong>Console Formatting:</strong> The data is returned to the local runspace and formatted cleanly into the technician's Heads Up Display, clearly separating Local vs. Active Directory entities.</li>
+                <li><strong>Audit Logging:</strong> Logs the successful query to the central UHDC CSV database via SMB (<strong>Port 445</strong>).</li>
+            </ol>
+        </section>
+
+        <section style="border-bottom: none;">
+            <h2 class="console-font">Q&A</h2>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Why do we need to query the PC directly? Can't we just look at the user's Active Directory groups?</div>
+                <div class="qa-answer">No. Active Directory only shows what <em>domain groups</em> a user belongs to. It does not know if a local IT technician manually added a user's domain account directly to the local SAM database of a specific laptop. The only way to definitively know who has admin rights on a specific piece of hardware is to query the hardware itself.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: What does the "PrincipalSource" property mean?</div>
+                <div class="qa-answer"><code>PrincipalSource</code> tells you where the account originates. If it says <strong>Local</strong>, the account exists only on that specific computer's hard drive (like the built-in 'Administrator' account). If it says <strong>ActiveDirectory</strong>, it is a domain account (like 'ACME\jsmith') that has been granted local privileges.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Q: Can this script remove unauthorized administrators?</div>
+                <div class="qa-answer">This specific script is strictly for <em>auditing</em> (read-only). If you identify an unauthorized user, you would typically use a Group Policy update or a custom remote command to strip the access, ensuring the remediation aligns with your organization's security framework.</div>
+            </div>
+        </section>
+    </div>
+
+</body>
+</html>
