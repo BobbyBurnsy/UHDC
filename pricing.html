@@ -344,29 +344,34 @@
         </section>
 
         <section style="border-bottom: none;">
-            <h2 class="console-font">Licensing FAQ</h2>
+            <h2 class="console-font">Frequently Asked Questions</h2>
 
-            <div class="qa-block">
-                <div class="qa-question">Is the Community tier a limited trial?</div>
-                <div class="qa-answer">No. The Community tier is the full, unrestricted version of the software. There are no time limits, no locked features, and no artificial delays. If your organization has fewer than 1,000 computer objects in Active Directory, it is completely free forever.</div>
+            <div class="qa-block" style="background-color: #252526; padding: 1.5rem; border-radius: 6px; margin-bottom: 1.5rem; border-left: 3px solid var(--neon-green);">
+                <div class="qa-question" style="font-weight: bold; color: var(--neon-blue); margin-bottom: 0.5rem; font-size: 1.15rem; font-family: 'Consolas', monospace;">
+                    Q: How is the 1,000 endpoint limit enforced?
+                </div>
+                <div class="qa-answer" style="color: #CCCCCC; font-size: 1.1rem;">
+                    <strong>It isn't. We operate on a strict honor system.</strong> The UHDC contains zero Digital Rights Management (DRM), zero "phone-home" telemetry, and zero background Active Directory polling. We built this tool for raw speed and instant live-call resolution. We refuse to introduce artificial latency or network overhead just to verify a license tier. If your environment exceeds 1,000 endpoints, we trust that your enterprise procurement and compliance teams will purchase the required commercial license.
+                </div>
             </div>
 
-            <div class="qa-block">
-                <div class="qa-question">How is the endpoint limit enforced?</div>
-                <div class="qa-answer">The UHDC operates on an honor system backed by a soft AD query. When the console launches, it runs a lightweight query to count the active computer objects in your domain. If it detects over 1,000 endpoints, it will display a polite reminder in the console output to purchase a commercial license, but it <strong>will not lock you out or break functionality</strong> during a live support call.</div>
+            <div class="qa-block" style="background-color: #252526; padding: 1.5rem; border-radius: 6px; margin-bottom: 1.5rem; border-left: 3px solid var(--neon-green);">
+                <div class="qa-question" style="font-weight: bold; color: var(--neon-blue); margin-bottom: 0.5rem; font-size: 1.15rem; font-family: 'Consolas', monospace;">
+                    Q: What if we have more than 10,000 endpoints?
+                </div>
+                <div class="qa-answer" style="color: #CCCCCC; font-size: 1.1rem;">
+                    For massive enterprise environments, standard sequential asset mapping can take several hours to complete, leading to stale data as laptops jump between Wi-Fi networks and VPNs. For domains exceeding 10,000 endpoints, we offer custom architecture consultations. We will work with your engineering team to implement distributed scanning nodes, aggressive multi-threading, or direct SCCM/Intune SQL database hooks to keep your asset maps lightning-fast at scale. Please contact us via GitHub for a custom quote.
+                </div>
             </div>
 
-            <div class="qa-block">
-                <div class="qa-question">Do we pay per technician seat?</div>
-                <div class="qa-answer">No. We use a "Site License" model based entirely on the size of your environment (endpoints). Whether you have 5 help desk technicians or 50, the price remains exactly the same.</div>
+            <div class="qa-block" style="background-color: #252526; padding: 1.5rem; border-radius: 6px; margin-bottom: 1.5rem; border-left: 3px solid var(--neon-green);">
+                <div class="qa-question" style="font-weight: bold; color: var(--neon-blue); margin-bottom: 0.5rem; font-size: 1.15rem; font-family: 'Consolas', monospace;">
+                    Q: Does the Free Tier lack any features?
+                </div>
+                <div class="qa-answer" style="color: #CCCCCC; font-size: 1.1rem;">
+                    No. We believe powerful IT orchestration should not be locked behind a paywall. The Community Free Tier includes 100% of the UHDC features, including the Interactive Training Engine and the Theme Manager. The only difference is the legal licensing threshold for your organization's endpoint count and priority vendor support.
+                </div>
             </div>
-
-            <div class="faq-block">
-				<div class="faq-question">What if we have more than 10,000 endpoints?</div>
-				<div class="faq-answer">For massive enterprise environments, standard sequential asset mapping (like our GlobalNetworkMap engine) can take several hours to complete, leading to stale data as devices change IP addresses. For domains exceeding 10,000 endpoints, we offer custom architecture consultations. We will work with your team to implement distributed scanning nodes, aggressive multi-threading, or direct SCCM/Intune database hooks to keep your asset maps lightning-fast and accurate at scale. Please contact us directly via GitHub for a custom quote.
-				</div>
-			</div>
-			
         </section>
 
     </div>
