@@ -68,8 +68,22 @@
             transition: color 0.2s;
         }
 
-        .nav-links a:hover, .nav-links a.active {
+        .nav-links a.active {
             color: var(--neon-green);
+        }
+		
+		.nav-links .btn-nav {
+            border: 1px solid var(--neon-blue);
+            padding: 0.4rem 1rem;
+            border-radius: 4px;
+            color: var(--neon-blue);
+            transition: all 0.2s ease;
+        }
+
+        .nav-links .btn-nav:hover {
+            background-color: var(--neon-blue);
+            color: var(--bg-dark);
+            box-shadow: 0 0 10px rgba(0, 162, 237, 0.5);
         }
 
         /* LAYOUT & CONTAINERS */
