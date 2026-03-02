@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UHDC | Licensing & Pricing</title>
+    <style>
+        /* CORE VARIABLES & RESET */
+        :root {
+            --bg-dark: #1E1E1E;
+            --bg-darker: #111111;
+            --neon-green: #00FF00;
+            --neon-blue: #00A2ED;
+            --text-main: #DDDDDD;
+            --text-muted: #888888;
+            --border-color: #333333;
+            --accent-purple: #B366FF;
+            --training-gold: #FFD700;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        .console-font {
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        /* NAVIGATION BAR */
+        nav {
+            background-color: var(--bg-darker);
+            border-bottom: 1px solid var(--neon-blue);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .nav-logo {
+            color: var(--neon-blue);
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--neon-green);
+        }
+
+        .nav-links .btn-nav {
+            border: 1px solid var(--neon-blue);
+            padding: 0.4rem 1rem;
+            border-radius: 4px;
+            color: var(--neon-blue);
+            transition: all 0.2s ease;
+        }
+
+        .nav-links .btn-nav:hover {
+            background-color: var(--neon-blue);
+            color: var(--bg-dark);
+            box-shadow: 0 0 10px rgba(0, 162, 237, 0.5);
+        }
+
+        /* LAYOUT & CONTAINERS */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 4rem 0 2rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        section {
+            padding: 4rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* TYPOGRAPHY & ACCENTS */
+        h1 {
+            font-size: 3.5rem;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+            letter-spacing: -1px;
+        }
+
+        h2 {
+            font-size: 2rem;
+            color: var(--neon-green);
+            margin-bottom: 1.5rem;
+            font-weight: normal;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+            color: #CCCCCC;
+        }
+
+        .highlight { color: var(--neon-green); }
+
+        /* PRICING CARDS */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .pricing-card {
+            background-color: #1A1A1A;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2.5rem 2rem;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .card-free { border-top: 5px solid var(--neon-green); }
+        .card-free:hover { box-shadow: 0 10px 30px rgba(0, 255, 0, 0.15); }
+
+        .card-pro { border-top: 5px solid var(--neon-blue); }
+        .card-pro:hover { box-shadow: 0 10px 30px rgba(0, 162, 237, 0.15); }
+
+        .card-ent { border-top: 5px solid var(--accent-purple); }
+        .card-ent:hover { box-shadow: 0 10px 30px rgba(179, 102, 255, 0.15); }
+
+        .pricing-tier {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #FFFFFF;
+            margin-bottom: 0.5rem;
+        }
+
+        .pricing-price {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-free .pricing-price { color: var(--neon-green); }
+        .card-pro .pricing-price { color: var(--neon-blue); }
+        .card-ent .pricing-price { color: var(--accent-purple); }
+
+        .pricing-sub {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.5rem;
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin: 0 0 2rem 0;
+            padding: 0;
+            flex-grow: 1;
+        }
+
+        .pricing-features li {
+            margin-bottom: 1rem;
+            font-size: 1.05rem;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .pricing-features li::before {
+            content: "✓";
+            color: var(--neon-green);
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        /* BUTTONS */
+        .btn-full {
+            display: block;
+            text-align: center;
+            background-color: transparent;
+            padding: 1rem;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 4px;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        .btn-free { border: 1px solid var(--neon-green); color: var(--neon-green); }
+        .btn-free:hover { background-color: var(--neon-green); color: var(--bg-dark); }
+
+        .btn-pro { border: 1px solid var(--neon-blue); color: var(--neon-blue); }
+        .btn-pro:hover { background-color: var(--neon-blue); color: var(--bg-dark); }
+
+        .btn-ent { border: 1px solid var(--accent-purple); color: var(--accent-purple); }
+        .btn-ent:hover { background-color: var(--accent-purple); color: var(--bg-dark); }
+
+        /* QA BLOCKS */
+        .qa-block {
+            background-color: #252526;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            border-left: 3px solid var(--neon-blue);
+        }
+
+        .qa-question {
+            font-weight: bold;
+            color: #FFFFFF;
+            margin-bottom: 0.5rem;
+            font-size: 1.15rem;
+        }
+
+        /* FOOTER */
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo console-font">UHDC.io</a>
+            <div class="nav-links console-font">
+                <a href="index.html">HOME</a>
+                <a href="about.html">ABOUT</a>
+                <a href="tools.html">TOOLS</a>
+                <a href="governance.html">GOVERNANCE</a>
+                <a href="pricing.html" class="active">PRICING</a>
+                <a href="https://github.com/bobbyburnsy" target="_blank" class="btn-nav">GITHUB REPO</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>Enterprise Grade. Community Accessible.</h1>
+            <p class="console-font highlight">>>> SITE LICENSING & DEPLOYMENT TIERS</p>
+        </header>
+
+        <section style="padding-bottom: 2rem; border-bottom: none;">
+            <p style="text-align: center; max-width: 800px; margin: 0 auto;">We believe powerful IT orchestration shouldn't be locked behind massive corporate paywalls. Tools that save technicians time and reduce user frustration should be accessible to the teams that need them the most. <strong>That is why the UHDC is 100% free for organizations managing fewer than 1,000 endpoints.</strong></p>
+        </section>
+
+        <section style="padding-top: 0;">
+            <div class="pricing-grid">
+
+                <!-- COMMUNITY TIER -->
+                <div class="pricing-card card-free">
+                    <div class="pricing-tier console-font">Community</div>
+                    <div class="pricing-price">$0</div>
+                    <div class="pricing-sub console-font">For teams managing <span style="color: var(--neon-green); font-weight: bold;">&lt; 1,000</span> endpoints.</div>
+
+                    <ul class="pricing-features">
+                        <li>Unlimited Technicians</li>
+                        <li>Full Active Directory Integration</li>
+                        <li>Microsoft Graph API / Intune Tools</li>
+                        <li>Interactive Training Engine</li>
+                        <li>Zero Hidden Telemetry</li>
+                    </ul>
+
+                    <a href="https://github.com/bobbyburnsy" target="_blank" class="btn-full btn-free console-font">DOWNLOAD NOW</a>
+                </div>
+
+                <!-- PROFESSIONAL TIER -->
+                <div class="pricing-card card-pro">
+                    <div class="pricing-tier console-font">Professional</div>
+                    <div class="pricing-price">$499<span style="font-size: 1.2rem; color: var(--text-muted);">/yr</span></div>
+                    <div class="pricing-sub console-font">For teams managing <span style="color: var(--neon-blue); font-weight: bold;">1,000 - 5,000</span> endpoints.</div>
+
+                    <ul class="pricing-features">
+                        <li>Everything in Community</li>
+                        <li>Commercial Use Certificate</li>
+                        <li>Supports larger AD environments</li>
+                        <li>Funds continued core development</li>
+                    </ul>
+
+                    <a href="https://github.com/bobbyburnsy" target="_blank" class="btn-full btn-pro console-font">CONTACT SALES</a>
+                </div>
+
+                <!-- ENTERPRISE TIER -->
+                <div class="pricing-card card-ent">
+                    <div class="pricing-tier console-font">Enterprise</div>
+                    <div class="pricing-price">$899<span style="font-size: 1.2rem; color: var(--text-muted);">/yr</span></div>
+                    <div class="pricing-sub console-font">For teams managing <span style="color: var(--accent-purple); font-weight: bold;">5,001 - 10,000</span> endpoints.</div>
+
+                    <ul class="pricing-features">
+                        <li>Everything in Professional</li>
+                        <li>Optimized for multi-domain forests</li>
+                        <li>Priority bug fixes & feature requests</li>
+                        <li>Custom deployment consultation</li>
+                    </ul>
+
+                    <a href="https://github.com/bobbyburnsy" target="_blank" class="btn-full btn-ent console-font">CONTACT SALES</a>
+                </div>
+
+            </div>
+        </section>
+
+        <section style="border-bottom: none;">
+            <h2 class="console-font">Licensing FAQ</h2>
+
+            <div class="qa-block">
+                <div class="qa-question">Is the Community tier a limited trial?</div>
+                <div class="qa-answer">No. The Community tier is the full, unrestricted version of the software. There are no time limits, no locked features, and no artificial delays. If your organization has fewer than 1,000 computer objects in Active Directory, it is completely free forever.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">How is the endpoint limit enforced?</div>
+                <div class="qa-answer">The UHDC operates on an honor system backed by a soft AD query. When the console launches, it runs a lightweight query to count the active computer objects in your domain. If it detects over 1,000 endpoints, it will display a polite reminder in the console output to purchase a commercial license, but it <strong>will not lock you out or break functionality</strong> during a live support call.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">Do we pay per technician seat?</div>
+                <div class="qa-answer">No. We use a "Site License" model based entirely on the size of your environment (endpoints). Whether you have 5 help desk technicians or 50, the price remains exactly the same.</div>
+            </div>
+
+            <div class="qa-block">
+                <div class="qa-question">What if we have more than 10,000 endpoints?</div>
+                <div class="qa-answer">For massive enterprise environments, the background asset mapping and AD queries require custom optimization to prevent network saturation. Please contact us directly via GitHub for a custom architecture consultation and quote.</div>
+            </div>
+        </section>
+
+    </div>
+
+    <footer>
+        <p class="console-font">2026 Unified Help Desk Console. Engineered for Enterprise IT.</p>
+    </footer>
+
+</body>
+</html>
