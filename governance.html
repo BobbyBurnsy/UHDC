@@ -250,7 +250,10 @@
         <section>
             <h2 class="console-font">3. Identity-First RBAC &amp; Graph API Integration</h2>
             <p>A core tenet of the UHDC architecture is the elimination of secondary credential silos. Every additional identity provider increases the organizational attack surface. Consequently, the UHDC utilizes an <strong>"Identity-First"</strong> approach, integrating directly with existing enterprise identity providers (Entra ID and Active Directory).</p>
-            <p>Role-Based Access Control (RBAC) is enforced natively. For cloud operations, the <code>IntuneMenu.ps1</code> engine utilizes pass-through authentication via <code>Connect-MgGraph</code>. The console ensures that Graph API requests are only authorized if the technician possesses the corresponding rights within the Microsoft portal.</p>
+            
+            <p>Role-Based Access Control (RBAC) is enforced natively. By leveraging the technician's active Entra login session directly through the Microsoft Graph API, the console operates strictly on <strong>Delegated Permissions</strong>. The UHDC does not utilize overarching application permissions or service principals.</p>
+            
+            <p>This guarantees a fundamental security principle: <span class="highlight">the tool cannot grant technicians any access, rights, or capabilities they do not already natively possess within the tenant.</span> Graph API requests are only authorized if the technician's account is already assigned the corresponding roles within the Microsoft 365/Intune portal.</p>
 
             <h3>UHDC Access Hierarchy &amp; Authorization</h3>
             <table>
