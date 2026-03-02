@@ -117,6 +117,8 @@
             color: var(--neon-blue);
             margin-bottom: 0.5rem;
             letter-spacing: -1px;
+            line-height: 1.2;       /* Keeps stacked lines tight together */
+            text-wrap: balance;     /* Modern CSS to prevent single-word orphans */
         }
 
         h2 {
@@ -278,8 +280,8 @@
 
     <div class="container">
         <header>
-            <h1>Enterprise Grade. Community Accessible.</h1>
-            <p class="console-font highlight">>>> SITE LICENSING & DEPLOYMENT TIERS</p>
+            <h1>Enterprise Grade.<br>Community Accessible.</h1>
+            <p class="console-font highlight" style="margin-top: 1rem;">>>> SITE LICENSING & DEPLOYMENT TIERS</p>
         </header>
 
         <section style="padding-bottom: 2rem; border-bottom: none;">
