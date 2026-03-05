@@ -98,12 +98,12 @@ if (-not (Test-Path $psExecPath)) {
 # THEME ENGINE & USER PREFERENCES (PS 5.1 Optimized)
 # ------------------------------------------------------------------
 $Themes = [ordered]@{
+    "Solarized Dark"     = @{ BG_Main="#002B36"; BG_Sec="#073642"; BG_Con="#001E26"; BG_Btn="#083642"; Acc_Pri="#268BD2"; Acc_Sec="#2AA198" }
     "PNW (Default)"      = @{ BG_Main="#1E1E1E"; BG_Sec="#111111"; BG_Con="#0C0C0C"; BG_Btn="#2D2D30"; Acc_Pri="#00A2ED"; Acc_Sec="#00FF00" }
     "Maritime Retro"     = @{ BG_Main="#0C2340"; BG_Sec="#071526"; BG_Con="#030A13"; BG_Btn="#113159"; Acc_Pri="#FFC425"; Acc_Sec="#00A6CE" }
     "Midnight Terminal"  = @{ BG_Main="#0D0208"; BG_Sec="#000000"; BG_Con="#050104"; BG_Btn="#1A0510"; Acc_Pri="#00F0FF"; Acc_Sec="#FF003C" }
     "Deep Amethyst"      = @{ BG_Main="#282A36"; BG_Sec="#1E1F29"; BG_Con="#191A21"; BG_Btn="#44475A"; Acc_Pri="#BD93F9"; Acc_Sec="#50FA7B" }
     "Mainframe"          = @{ BG_Main="#050F05"; BG_Sec="#020802"; BG_Con="#010401"; BG_Btn="#0A1A0A"; Acc_Pri="#00FF41"; Acc_Sec="#00FF42" }
-    "Solarized Dark"     = @{ BG_Main="#002B36"; BG_Sec="#073642"; BG_Con="#001E26"; BG_Btn="#083642"; Acc_Pri="#268BD2"; Acc_Sec="#2AA198" }
     "Blood Moon"         = @{ BG_Main="#1A0000"; BG_Sec="#0D0000"; BG_Con="#050000"; BG_Btn="#260000"; Acc_Pri="#FF3333"; Acc_Sec="#FF8800" }
     "Deep Ocean"         = @{ BG_Main="#0F172A"; BG_Sec="#080C17"; BG_Con="#04060C"; BG_Btn="#1E293B"; Acc_Pri="#38BDF8"; Acc_Sec="#34D399" }
     "Death Valley"       = @{ BG_Main="#2E251E"; BG_Sec="#1F1813"; BG_Con="#140F0C"; BG_Btn="#3D3228"; Acc_Pri="#D97736"; Acc_Sec="#E8B07D" }
@@ -116,7 +116,7 @@ $Themes = [ordered]@{
 $UsersFile = Join-Path -Path $CoreFolder -ChildPath "users.json"
 $UserPrefs = @{}
 
-# Load existing preferences (PS 5.1 PSCustomObject to Hashtable mapping)
+# Load existing preferences
 if (Test-Path $UsersFile) {
     try {
         $rawPrefs = Get-Content $UsersFile -Raw | ConvertFrom-Json
@@ -127,14 +127,13 @@ if (Test-Path $UsersFile) {
 }
 
 # Determine active colors for current user
-$ActiveThemeName = "PNW (Default)"
+$ActiveThemeName = "Solarized Dark"
 $ActiveColors = $Themes[$ActiveThemeName]
 
 if ($UserPrefs.ContainsKey($env:USERNAME)) {
     $pref = $UserPrefs[$env:USERNAME]
     if ($pref.ThemeName -eq "Custom" -and $null -ne $pref.CustomColors) {
         $ActiveThemeName = "Custom"
-        # Explicitly map to a hashtable to prevent PS 5.1 serialization quirks
         $ActiveColors = @{
             BG_Main = $pref.CustomColors.BG_Main
             BG_Sec  = $pref.CustomColors.BG_Sec
@@ -143,16 +142,19 @@ if ($UserPrefs.ContainsKey($env:USERNAME)) {
             Acc_Pri = $pref.CustomColors.Acc_Pri
             Acc_Sec = $pref.CustomColors.Acc_Sec
         }
-    } elseif ($Themes.ContainsKey($pref.ThemeName)) {
+    } elseif ($Themes.Contains($pref.ThemeName)) { # FIX: PS 5.1 OrderedDictionary uses .Contains()
         $ActiveThemeName = $pref.ThemeName
         $ActiveColors = $Themes[$ActiveThemeName]
     }
 }
 
-# Encode theme for safe injection to subscripts across runspaces
-$ThemeJson = $ActiveColors | ConvertTo-Json -Compress
-$ThemeBytes = [System.Text.Encoding]::UTF8.GetBytes($ThemeJson)
-$ThemeB64 = [Convert]::ToBase64String($ThemeBytes)
+$global:ThemeB64 = ""
+function Update-ThemeB64 {
+    $ThemeJson = $ActiveColors | ConvertTo-Json -Compress
+    $ThemeBytes = [System.Text.Encoding]::UTF8.GetBytes($ThemeJson)
+    $global:ThemeB64 = [Convert]::ToBase64String($ThemeBytes)
+}
+Update-ThemeB64
 
 # ------------------------------------------------------------------
 # INITIALIZE ASYNC RUNSPACE POOL
@@ -164,16 +166,31 @@ $RunspacePool.Open()
 # ------------------------------------------------------------------
 # 1. DEFINE THE UI (DYNAMIC 4-QUADRANT XAML)
 # ------------------------------------------------------------------
-# FIX: Cast as [string] instead of [xml] to prevent ps2exe parsing failures
 [string]$XAML = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Unified Help Desk Console (UHDC)" Height="950" Width="1350" Background="%%BG_MAIN%%" WindowStartupLocation="CenterScreen">
+        Title="Unified Help Desk Console (UHDC)" Height="950" Width="1350" Background="{DynamicResource BgMainBrush}" WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
+        <!-- Dynamic Theme Colors -->
+        <Color x:Key="BgMainColor">%%BG_MAIN%%</Color>
+        <Color x:Key="BgSecColor">%%BG_SEC%%</Color>
+        <Color x:Key="BgConColor">%%BG_CON%%</Color>
+        <Color x:Key="BgBtnColor">%%BG_BTN%%</Color>
+        <Color x:Key="AccPriColor">%%ACC_PRI%%</Color>
+        <Color x:Key="AccSecColor">%%ACC_SEC%%</Color>
+
+        <!-- Dynamic Theme Brushes -->
+        <SolidColorBrush x:Key="BgMainBrush" Color="{DynamicResource BgMainColor}"/>
+        <SolidColorBrush x:Key="BgSecBrush" Color="{DynamicResource BgSecColor}"/>
+        <SolidColorBrush x:Key="BgConBrush" Color="{DynamicResource BgConColor}"/>
+        <SolidColorBrush x:Key="BgBtnBrush" Color="{DynamicResource BgBtnColor}"/>
+        <SolidColorBrush x:Key="AccPriBrush" Color="{DynamicResource AccPriColor}"/>
+        <SolidColorBrush x:Key="AccSecBrush" Color="{DynamicResource AccSecColor}"/>
+
         <Style x:Key="StdBtn" TargetType="Button">
-            <Setter Property="Background" Value="%%BG_BTN%%"/>
-            <Setter Property="Foreground" Value="%%ACC_PRI%%"/>
+            <Setter Property="Background" Value="{DynamicResource BgBtnBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccPriBrush}"/>
             <Setter Property="BorderBrush" Value="#444444"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -185,17 +202,17 @@ $RunspacePool.Open()
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="%%ACC_SEC%%"/>
-                                <Setter Property="Foreground" Value="%%ACC_SEC%%"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource AccSecBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource AccSecBrush}"/>
                                 <Setter TargetName="border" Property="Effect">
                                     <Setter.Value>
-                                        <DropShadowEffect Color="%%ACC_SEC%%" BlurRadius="12" ShadowDepth="0" Opacity="0.7"/>
+                                        <DropShadowEffect Color="{DynamicResource AccSecColor}" BlurRadius="12" ShadowDepth="0" Opacity="0.7"/>
                                     </Setter.Value>
                                 </Setter>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="%%ACC_SEC%%"/>
-                                <Setter Property="Foreground" Value="%%BG_MAIN%%"/>
+                                <Setter TargetName="border" Property="Background" Value="{DynamicResource AccSecBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource BgMainBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -204,12 +221,12 @@ $RunspacePool.Open()
         </Style>
 
         <Style x:Key="ActionBtn" TargetType="Button" BasedOn="{StaticResource StdBtn}">
-            <Setter Property="Foreground" Value="%%ACC_SEC%%"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccSecBrush}"/>
         </Style>
 
         <Style x:Key="DangerBtn" TargetType="Button">
-            <Setter Property="Background" Value="%%BG_BTN%%"/>
-            <Setter Property="Foreground" Value="%%ACC_PRI%%"/>
+            <Setter Property="Background" Value="{DynamicResource BgBtnBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccPriBrush}"/>
             <Setter Property="BorderBrush" Value="#444444"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -232,7 +249,7 @@ $RunspacePool.Open()
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="border" Property="Background" Value="#FF4444"/>
-                                <Setter Property="Foreground" Value="%%BG_MAIN%%"/>
+                                <Setter Property="Foreground" Value="{DynamicResource BgMainBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -241,8 +258,8 @@ $RunspacePool.Open()
         </Style>
 
         <Style x:Key="WarningBtn" TargetType="Button">
-            <Setter Property="Background" Value="%%BG_BTN%%"/>
-            <Setter Property="Foreground" Value="%%ACC_PRI%%"/>
+            <Setter Property="Background" Value="{DynamicResource BgBtnBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccPriBrush}"/>
             <Setter Property="BorderBrush" Value="#444444"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -265,7 +282,7 @@ $RunspacePool.Open()
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="border" Property="Background" Value="#FFD700"/>
-                                <Setter Property="Foreground" Value="%%BG_MAIN%%"/>
+                                <Setter Property="Foreground" Value="{DynamicResource BgMainBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -274,8 +291,8 @@ $RunspacePool.Open()
         </Style>
 
         <Style x:Key="MasterBtn" TargetType="Button">
-            <Setter Property="Background" Value="%%BG_BTN%%"/>
-            <Setter Property="Foreground" Value="%%ACC_PRI%%"/>
+            <Setter Property="Background" Value="{DynamicResource BgBtnBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccPriBrush}"/>
             <Setter Property="BorderBrush" Value="#444444"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -298,7 +315,7 @@ $RunspacePool.Open()
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="border" Property="Background" Value="#B366FF"/>
-                                <Setter Property="Foreground" Value="%%BG_MAIN%%"/>
+                                <Setter Property="Foreground" Value="{DynamicResource BgMainBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -315,11 +332,11 @@ $RunspacePool.Open()
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="$OrgName IT Dashboard" FontSize="26" Foreground="%%ACC_PRI%%" FontWeight="Bold" Margin="5,0,0,5"/>
+        <TextBlock Grid.Row="0" Text="$OrgName IT Dashboard" FontSize="26" Foreground="{DynamicResource AccPriBrush}" FontWeight="Bold" Margin="5,0,0,5"/>
 
-        <Grid Grid.Row="1" Height="30" Background="%%BG_SEC%%" Margin="5,0,5,10" >
+        <Grid Grid.Row="1" Height="30" Background="{DynamicResource BgSecBrush}" Margin="5,0,5,10" >
             <Canvas Name="MotdCanvas" ClipToBounds="True">
-                <TextBlock Name="MotdScrollText" Foreground="%%ACC_SEC%%" FontSize="16" FontFamily="Consolas" FontWeight="Bold" Canvas.Left="1350" Canvas.Top="4" Text="Loading Announcements..."/>
+                <TextBlock Name="MotdScrollText" Foreground="{DynamicResource AccSecBrush}" FontSize="16" FontFamily="Consolas" FontWeight="Bold" Canvas.Left="1350" Canvas.Top="4" Text="Loading Announcements..."/>
             </Canvas>
         </Grid>
 
@@ -336,7 +353,7 @@ $RunspacePool.Open()
                 </Grid.RowDefinitions>
 
                 <GroupBox Grid.Row="0" Header="AD User Intelligence &amp; Actions" Foreground="#AAAAAA" BorderBrush="#333333" Margin="5" Padding="0">
-                    <Border BorderThickness="4,0,0,0" BorderBrush="%%ACC_PRI%%" Background="%%BG_SEC%%" Padding="10">
+                    <Border BorderThickness="4,0,0,0" BorderBrush="{DynamicResource AccPriBrush}" Background="{DynamicResource BgSecBrush}" Padding="10">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -346,7 +363,7 @@ $RunspacePool.Open()
 
                             <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
                                 <TextBlock Text="Username:" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0" FontSize="14"/>
-                                <TextBox Name="ADInput" Width="180" Height="28" FontSize="14" Background="%%BG_MAIN%%" Foreground="%%ACC_PRI%%" BorderBrush="#555555" Padding="2" ToolTip="Enter an Employee ID, Username, or First/Last name."/>
+                                <TextBox Name="ADInput" Width="180" Height="28" FontSize="14" Background="{DynamicResource BgMainBrush}" Foreground="{DynamicResource AccPriBrush}" BorderBrush="#555555" Padding="2" ToolTip="Enter an Employee ID, Username, or First/Last name."/>
                                 <Button Name="BtnADLookup" Content="Search AD" Width="100" Height="28" Margin="10,0,0,0" Style="{StaticResource StdBtn}" ToolTip="Query Active Directory for this user's details and known PCs."/>
                                 <Button Name="BtnDisabledAD" Content="Disabled Users" Width="120" Height="28" Margin="10,0,0,0" Style="{StaticResource StdBtn}" ToolTip="Generate a full report of all disabled accounts in the domain."/>
                                 <Button Name="BtnGlobalMap" Content="Compile Global Map" Width="150" Height="28" Margin="10,0,0,0" Style="{StaticResource MasterBtn}" ToolTip="Compile a master map of all known active nodes on the network."/>
@@ -364,13 +381,13 @@ $RunspacePool.Open()
                                 <Button Name="BtnRemLoc" Content="- Rem PC" Width="65" Height="30" Margin="2" Style="{StaticResource WarningBtn}" ToolTip="Select and remove an incorrect PC from a User's history."/>
                             </WrapPanel>
 
-                            <TextBox Name="ADOutputConsole" Grid.Row="2" Background="%%BG_CON%%" Foreground="%%ACC_SEC%%" FontFamily="Consolas" FontSize="16" IsReadOnly="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" BorderThickness="1" BorderBrush="#333333"/>
+                            <TextBox Name="ADOutputConsole" Grid.Row="2" Background="{DynamicResource BgConBrush}" Foreground="{DynamicResource AccSecBrush}" FontFamily="Consolas" FontSize="16" IsReadOnly="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" BorderThickness="1" BorderBrush="#333333"/>
                         </Grid>
                     </Border>
                 </GroupBox>
 
                 <GroupBox Grid.Row="1" Header="Command Center (Active Techs)" Foreground="#AAAAAA" BorderBrush="#333333" Margin="5" Padding="0">
-                    <Border BorderThickness="4,0,0,0" BorderBrush="%%ACC_PRI%%" Background="%%BG_SEC%%" Padding="10">
+                    <Border BorderThickness="4,0,0,0" BorderBrush="{DynamicResource AccPriBrush}" Background="{DynamicResource BgSecBrush}" Padding="10">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -383,7 +400,7 @@ $RunspacePool.Open()
                                 <Button Name="BtnDelMOTD" Content="- MOTD" Width="70" Height="30" Margin="2" Style="{StaticResource WarningBtn}" ToolTip="Remove an existing pinned Message of the Day."/>
                             </WrapPanel>
 
-                            <TextBox Name="OnlineUsersConsole" Grid.Row="1" Background="%%BG_CON%%" Foreground="%%ACC_SEC%%" FontFamily="Consolas" FontSize="14" IsReadOnly="True" VerticalScrollBarVisibility="Hidden" TextWrapping="Wrap" BorderThickness="1" BorderBrush="#333333"/>
+                            <TextBox Name="OnlineUsersConsole" Grid.Row="1" Background="{DynamicResource BgConBrush}" Foreground="{DynamicResource AccSecBrush}" FontFamily="Consolas" FontSize="14" IsReadOnly="True" VerticalScrollBarVisibility="Hidden" TextWrapping="Wrap" BorderThickness="1" BorderBrush="#333333"/>
                         </Grid>
                     </Border>
                 </GroupBox>
@@ -396,7 +413,7 @@ $RunspacePool.Open()
                 </Grid.RowDefinitions>
 
                 <GroupBox Grid.Row="0" Header="Remote Access &amp; Diagnostics" Foreground="#AAAAAA" BorderBrush="#333333" Margin="5" Padding="0">
-                    <Border BorderThickness="4,0,0,0" BorderBrush="%%ACC_PRI%%" Background="%%BG_SEC%%" Padding="10">
+                    <Border BorderThickness="4,0,0,0" BorderBrush="{DynamicResource AccPriBrush}" Background="{DynamicResource BgSecBrush}" Padding="10">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -405,7 +422,7 @@ $RunspacePool.Open()
                             </Grid.RowDefinitions>
                             <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
                                 <TextBlock Text="Target PC:" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                <TextBox Name="ComputerInput" Width="160" Height="25" Background="%%BG_MAIN%%" Foreground="%%ACC_PRI%%" FontWeight="Bold" BorderBrush="#555555" Padding="2" ToolTip="Enter a specific Target PC Name or IP Address."/>
+                                <TextBox Name="ComputerInput" Width="160" Height="25" Background="{DynamicResource BgMainBrush}" Foreground="{DynamicResource AccPriBrush}" FontWeight="Bold" BorderBrush="#555555" Padding="2" ToolTip="Enter a specific Target PC Name or IP Address."/>
                             </StackPanel>
                             <WrapPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
                                 <Button Name="BtnSCCM" Content="SCCM" Width="60" Height="30" Margin="2" Style="{StaticResource ActionBtn}" ToolTip="Launch SCCM Remote Control Viewer for the target PC."/>
@@ -415,13 +432,13 @@ $RunspacePool.Open()
                                 <Button Name="BtnLAPS" Content="LAPS" Width="55" Height="30" Margin="2" Style="{StaticResource StdBtn}" ToolTip="Retrieve the rotating Local Administrator Password from AD."/>
                                 <Button Name="BtnDeploy" Content="Deploy GUI" Width="90" Height="30" Margin="2" Style="{StaticResource MasterBtn}" ToolTip="Push the compiled UHDC Network Shortcut directly to a coworker's PC."/>
                             </WrapPanel>
-                            <TextBox Name="ComputerOutputConsole" Grid.Row="2" Height="120" Background="%%BG_CON%%" Foreground="%%ACC_SEC%%" FontFamily="Consolas" FontSize="13" IsReadOnly="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" BorderThickness="1" BorderBrush="#333333"/>
+                            <TextBox Name="ComputerOutputConsole" Grid.Row="2" Height="120" Background="{DynamicResource BgConBrush}" Foreground="{DynamicResource AccSecBrush}" FontFamily="Consolas" FontSize="13" IsReadOnly="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" BorderThickness="1" BorderBrush="#333333"/>
                         </Grid>
                     </Border>
                 </GroupBox>
 
                 <GroupBox Grid.Row="1" Header="Endpoint Remediation &amp; Core Tools" Foreground="#AAAAAA" BorderBrush="#333333" Margin="5" Padding="0">
-                    <Border BorderThickness="4,0,0,0" BorderBrush="%%ACC_PRI%%" Background="%%BG_SEC%%" Padding="10">
+                    <Border BorderThickness="4,0,0,0" BorderBrush="{DynamicResource AccPriBrush}" Background="{DynamicResource BgSecBrush}" Padding="10">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -430,7 +447,7 @@ $RunspacePool.Open()
                             </Grid.RowDefinitions>
                             <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
                                 <TextBlock Text="Target PC:" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                <TextBox Name="PluginInput" Width="160" Height="25" Background="%%BG_MAIN%%" Foreground="%%ACC_PRI%%" FontWeight="Bold" BorderBrush="#555555" Padding="2" ToolTip="Enter a specific Target PC Name or IP Address."/>
+                                <TextBox Name="PluginInput" Width="160" Height="25" Background="{DynamicResource BgMainBrush}" Foreground="{DynamicResource AccPriBrush}" FontWeight="Bold" BorderBrush="#555555" Padding="2" ToolTip="Enter a specific Target PC Name or IP Address."/>
                             </StackPanel>
                             <WrapPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
                                 <Button Name="BtnNetInfo" Content="Network Info" Width="95" Height="30" Margin="2" Style="{StaticResource StdBtn}" ToolTip="Pull live IP, MAC address, and adapter details from the PC."/>
@@ -450,7 +467,7 @@ $RunspacePool.Open()
                                 <Button Name="BtnRestartSCCM" Content="Restart SCCM" Width="100" Height="30" Margin="2" Style="{StaticResource WarningBtn}" ToolTip="Restart the local SMS Agent Host service to fix SCCM hangs."/>
                                 <Button Name="BtnRestart" Content="Restart Options" Width="110" Height="30" Margin="2" Style="{StaticResource DangerBtn}" ToolTip="Initiate a graceful or forced remote reboot."/>
                             </WrapPanel>
-                            <TextBox Name="PluginOutputConsole" Grid.Row="2" Background="%%BG_CON%%" Foreground="%%ACC_SEC%%" FontFamily="Consolas" FontSize="13" IsReadOnly="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" BorderThickness="1" BorderBrush="#333333"/>
+                            <TextBox Name="PluginOutputConsole" Grid.Row="2" Background="{DynamicResource BgConBrush}" Foreground="{DynamicResource AccSecBrush}" FontFamily="Consolas" FontSize="13" IsReadOnly="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" BorderThickness="1" BorderBrush="#333333"/>
                         </Grid>
                     </Border>
                 </GroupBox>
@@ -465,14 +482,14 @@ $RunspacePool.Open()
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <TextBlock Name="StatusBar" Grid.Column="0" Text="Ready..." Foreground="#28A745" FontWeight="Bold" VerticalAlignment="Center"/>
-            <Button Name="BtnTheme" Grid.Column="1" Content="[Theme Settings]" Background="Transparent" Foreground="%%ACC_PRI%%" BorderThickness="0" Cursor="Hand" Margin="0,0,20,0" FontWeight="Bold"/>
+            <Button Name="BtnTheme" Grid.Column="1" Content="[Theme Settings]" Background="Transparent" Foreground="{DynamicResource AccPriBrush}" BorderThickness="0" Cursor="Hand" Margin="0,0,20,0" FontWeight="Bold"/>
             <CheckBox Name="CbTrainingMode" Grid.Column="2" Content="Training Mode" Foreground="#FFD700" FontWeight="Bold" VerticalAlignment="Center" ToolTip="Enable interactive step-by-step execution." Cursor="Hand"/>
         </Grid>
     </Grid>
 </Window>
 "@
 
-# Inject the active theme colors into the XAML string before loading
+# Inject the initial active theme colors into the XAML string before loading
 $XAML = $XAML -replace '%%BG_MAIN%%', $ActiveColors.BG_Main
 $XAML = $XAML -replace '%%BG_SEC%%',  $ActiveColors.BG_Sec
 $XAML = $XAML -replace '%%BG_CON%%',  $ActiveColors.BG_Con
@@ -480,10 +497,26 @@ $XAML = $XAML -replace '%%BG_BTN%%',  $ActiveColors.BG_Btn
 $XAML = $XAML -replace '%%ACC_PRI%%', $ActiveColors.Acc_Pri
 $XAML = $XAML -replace '%%ACC_SEC%%', $ActiveColors.Acc_Sec
 
-# FIX: Use StringReader to bypass ps2exe [xml] casting bugs
 $StringReader = New-Object System.IO.StringReader $XAML
 $XmlReader = [System.Xml.XmlReader]::Create($StringReader)
 $Form = [System.Windows.Markup.XamlReader]::Load($XmlReader)
+
+# ------------------------------------------------------------------
+# LIVE THEME UPDATER FUNCTION
+# ------------------------------------------------------------------
+function Update-AppTheme($Colors) {
+    try {
+        $Form.Resources["BgMainColor"] = [System.Windows.Media.ColorConverter]::ConvertFromString($Colors.BG_Main)
+        $Form.Resources["BgSecColor"]  = [System.Windows.Media.ColorConverter]::ConvertFromString($Colors.BG_Sec)
+        $Form.Resources["BgConColor"]  = [System.Windows.Media.ColorConverter]::ConvertFromString($Colors.BG_Con)
+        $Form.Resources["BgBtnColor"]  = [System.Windows.Media.ColorConverter]::ConvertFromString($Colors.BG_Btn)
+        $Form.Resources["AccPriColor"] = [System.Windows.Media.ColorConverter]::ConvertFromString($Colors.Acc_Pri)
+        $Form.Resources["AccSecColor"] = [System.Windows.Media.ColorConverter]::ConvertFromString($Colors.Acc_Sec)
+
+        $global:ActiveColors = $Colors
+        Update-ThemeB64
+    } catch {}
+}
 
 # ------------------------------------------------------------------
 # 2. MAP UI ELEMENTS & RBAC
@@ -586,7 +619,6 @@ $global:UHDCSync = [hashtable]::Synchronized(@{
 })
 
 function Show-StepDialog {
-    # FIX: Cast as [string] instead of [xml]
     [string]$TrainXAML = @"
     <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -685,7 +717,6 @@ function Show-StepDialog {
     </Window>
 "@
 
-    # Inject active colors into the training pop-up
     $TrainXAML = $TrainXAML -replace '%%BG_MAIN%%', $ActiveColors.BG_Main
     $TrainXAML = $TrainXAML -replace '%%BG_SEC%%', $ActiveColors.BG_Sec
     $TrainXAML = $TrainXAML -replace '%%BG_CON%%', $ActiveColors.BG_Con
@@ -693,12 +724,10 @@ function Show-StepDialog {
     $TrainXAML = $TrainXAML -replace '%%ACC_PRI%%', $ActiveColors.Acc_Pri
     $TrainXAML = $TrainXAML -replace '%%ACC_SEC%%', $ActiveColors.Acc_Sec
 
-    # FIX: Use StringReader to bypass ps2exe [xml] casting bugs
     $StringReader = New-Object System.IO.StringReader $TrainXAML
     $XmlReader = [System.Xml.XmlReader]::Create($StringReader)
     $StepWin = [Windows.Markup.XamlReader]::Load($XmlReader)
 
-    # Map UI Elements
     $StepDesc    = $StepWin.FindName("StepDesc")
     $CodeDoc     = $StepWin.FindName("CodeDoc")
     $BtnCopy     = $StepWin.FindName("BtnCopy")
@@ -726,7 +755,6 @@ function Show-StepDialog {
     $level = [math]::Floor($newXP / 500) + 1
     $XpText.Text = "LEVEL $level | $newXP XP (+$xpGain XP)"
 
-    # Save XP back to UserPrefs (PS 5.1 Safe Serialization)
     if (-not $UserPrefs.ContainsKey($env:USERNAME)) { $UserPrefs[$env:USERNAME] = @{} }
     $UserPrefs[$env:USERNAME].XP = $newXP
     try {
@@ -741,25 +769,23 @@ function Show-StepDialog {
     # 2. SYNTAX HIGHLIGHTING ENGINE
     # ==========================================
     $Paragraph = New-Object System.Windows.Documents.Paragraph
-
-    # Tokenize the code string (Strings, Variables, Parameters, Cmdlets, Others)
     $Tokens = [regex]::Matches($RawCode, "(`".*?`"|'.*?'|\\\$[a-zA-Z0-9_:]+|-[a-zA-Z0-9_]+|[a-zA-Z]+-[a-zA-Z]+|[^\s]+|\s+)")
 
     foreach ($Token in $Tokens) {
         $Run = New-Object System.Windows.Documents.Run($Token.Value)
 
         if ($Token.Value -match "^`".*`"$|^'.*'$") { 
-            $Run.Foreground = "#E6DB74" # Strings (Yellow)
+            $Run.Foreground = "#E6DB74" 
         } elseif ($Token.Value -match "^\\\$") { 
-            $Run.Foreground = "#FFB86C" # Variables (Orange)
+            $Run.Foreground = "#FFB86C" 
         } elseif ($Token.Value -match "^-[a-zA-Z]") { 
-            $Run.Foreground = "#A6E22E" # Parameters (Green)
+            $Run.Foreground = "#A6E22E" 
         } elseif ($Token.Value -match "^[A-Z][a-z]+-[A-Z][a-z]+") { 
-            $Run.Foreground = "#66D9EF" # Cmdlets (Blue)
+            $Run.Foreground = "#66D9EF" 
         } elseif ($Token.Value -match "^{|}|\[|\]|\(|\)$") {
-            $Run.Foreground = "#F92672" # Brackets/Braces (Pink)
+            $Run.Foreground = "#F92672" 
         } else { 
-            $Run.Foreground = "#F8F8F2" # Default (White)
+            $Run.Foreground = "#F8F8F2" 
         }
 
         $Paragraph.Inlines.Add($Run)
@@ -774,7 +800,6 @@ function Show-StepDialog {
         $BtnCopy.Content = "Copied!"
         $BtnCopy.Foreground = "#00FF00"
 
-        # Reset button text after 2 seconds without freezing UI
         $resetTimer = New-Object System.Windows.Threading.DispatcherTimer
         $resetTimer.Interval = [TimeSpan]::FromSeconds(2)
         $resetTimer.Add_Tick({
@@ -788,7 +813,6 @@ function Show-StepDialog {
     # ==========================================
     # 4. AUTO-GENERATE PARAMETER BREAKDOWN
     # ==========================================
-    # Regex to find "-Parameter Value" pairs in the code
     $paramRegex = "(?<param>-[a-zA-Z0-9]+)\s+(?<val>'[^']*'|`"[^`"]*`"|\$?[a-zA-Z0-9_:\\]+)"
     $paramMatches = [regex]::Matches($RawCode, $paramRegex)
 
@@ -798,7 +822,6 @@ function Show-StepDialog {
             $pName = $m.Groups['param'].Value
             $pVal  = $m.Groups['val'].Value
 
-            # Contextual hints based on common parameters
             $pContext = "Standard argument passed to cmdlet."
             if ($pName -match "-ComputerName") { $pContext = "Directs the command over the network to the target PC." }
             if ($pName -match "-Force") { $pContext = "Bypasses standard confirmation prompts/locks." }
@@ -899,7 +922,6 @@ function Invoke-UHDCScriptAsync {
                 try {
             $hashToPass = if ($IsTraining) { $SyncHash } else { $null }
 
-            # Dynamically build parameters to prevent ParameterBinding crashes on older scripts
             $Splat = @{
                 SharedRoot = $SharedRoot
                 SyncHash   = $hashToPass
@@ -937,7 +959,6 @@ function Invoke-UHDCScriptAsync {
         }
     })
 
-    # Pass arguments cleanly to the runspace in the EXACT order of the param() block
     [void]$PS.AddArgument($ScriptPath)
     [void]$PS.AddArgument($Target)
     [void]$PS.AddArgument($RequiresTarget)
@@ -949,7 +970,7 @@ function Invoke-UHDCScriptAsync {
     [void]$PS.AddArgument($SharedRoot)
     [void]$PS.AddArgument($global:UHDCSync)
     [void]$PS.AddArgument([bool]$CbTrainingMode.IsChecked)
-    [void]$PS.AddArgument($ThemeB64) 
+    [void]$PS.AddArgument($global:ThemeB64) 
 
     $PS.RunspacePool = $RunspacePool
     [void]$PS.BeginInvoke()
@@ -959,7 +980,6 @@ function Invoke-UHDCScriptAsync {
 # 5. THEME PICKER GUI
 # ------------------------------------------------------------------
 function Show-ThemePicker {
-    # FIX: Cast as [string] instead of [xml]
     [string]$ThemeXAML = @"
     <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
             Title="UHDC Theme Settings" Height="480" Width="450" Background="%%BG_MAIN%%" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Topmost="True">
@@ -984,49 +1004,55 @@ function Show-ThemePicker {
                 <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,10">
                     <TextBlock Text="Background Main:" Foreground="#CCC" FontSize="11"/>
                     <Grid>
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                         <TextBox Name="TxtBgMain" Grid.Column="0" Height="24" Background="#222" Foreground="White" BorderBrush="#555" VerticalContentAlignment="Center"/>
-                        <Button Name="BtnPickBgMain" Grid.Column="1" Content="..." Width="28" Height="24" Margin="5,0,0,0" Background="#333" BorderBrush="#555" Cursor="Hand" ToolTip="Pick Color"/>
+                        <Border Name="PrevBgMain" Grid.Column="1" Width="24" Height="24" Margin="5,0,0,0" BorderBrush="#555" BorderThickness="1" CornerRadius="2"/>
+                        <Button Name="BtnPickBgMain" Grid.Column="2" Content="..." Width="28" Height="24" Margin="5,0,0,0" Background="#333" BorderBrush="#555" Cursor="Hand" ToolTip="Pick Color"/>
                     </Grid>
                 </StackPanel>
                 <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,10">
                     <TextBlock Text="Background Secondary:" Foreground="#CCC" FontSize="11"/>
                     <Grid>
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                         <TextBox Name="TxtBgSec" Grid.Column="0" Height="24" Background="#222" Foreground="White" BorderBrush="#555" VerticalContentAlignment="Center"/>
-                        <Button Name="BtnPickBgSec" Grid.Column="1" Content="..." Width="28" Height="24" Margin="5,0,0,0" Background="#333" BorderBrush="#555" Cursor="Hand" ToolTip="Pick Color"/>
+                        <Border Name="PrevBgSec" Grid.Column="1" Width="24" Height="24" Margin="5,0,0,0" BorderBrush="#555" BorderThickness="1" CornerRadius="2"/>
+                        <Button Name="BtnPickBgSec" Grid.Column="2" Content="..." Width="28" Height="24" Margin="5,0,0,0" Background="#333" BorderBrush="#555" Cursor="Hand" ToolTip="Pick Color"/>
                     </Grid>
                 </StackPanel>
                 <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,10">
                     <TextBlock Text="Console Background:" Foreground="#CCC" FontSize="11"/>
                     <Grid>
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                         <TextBox Name="TxtBgCon" Grid.Column="0" Height="24" Background="#222" Foreground="White" BorderBrush="#555" VerticalContentAlignment="Center"/>
-                        <Button Name="BtnPickBgCon" Grid.Column="1" Content="..." Width="28" Height="24" Margin="5,0,0,0" Background="#333" BorderBrush="#555" Cursor="Hand" ToolTip="Pick Color"/>
+                        <Border Name="PrevBgCon" Grid.Column="1" Width="24" Height="24" Margin="5,0,0,0" BorderBrush="#555" BorderThickness="1" CornerRadius="2"/>
+                        <Button Name="BtnPickBgCon" Grid.Column="2" Content="..." Width="28" Height="24" Margin="5,0,0,0" Background="#333" BorderBrush="#555" Cursor="Hand" ToolTip="Pick Color"/>
                     </Grid>
                 </StackPanel>
                 <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,10">
                     <TextBlock Text="Button Background:" Foreground="#CCC" FontSize="11"/>
                     <Grid>
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                         <TextBox Name="TxtBgBtn" Grid.Column="0" Height="24" Background="#222" Foreground="White" BorderBrush="#555" VerticalContentAlignment="Center"/>
-                        <Button Name="BtnPickBgBtn" Grid.Column="1" Content="..." Width="28" Height="24" Margin="5,0,0,0" Background="#333" BorderBrush="#555" Cursor="Hand" ToolTip="Pick Color"/>
+                        <Border Name="PrevBgBtn" Grid.Column="1" Width="24" Height="24" Margin="5,0,0,0" BorderBrush="#555" BorderThickness="1" CornerRadius="2"/>
+                        <Button Name="BtnPickBgBtn" Grid.Column="2" Content="..." Width="28" Height="24" Margin="5,0,0,0" Background="#333" BorderBrush="#555" Cursor="Hand" ToolTip="Pick Color"/>
                     </Grid>
                 </StackPanel>
                 <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,0">
                     <TextBlock Text="Primary Accent:" Foreground="#CCC" FontSize="11"/>
                     <Grid>
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                         <TextBox Name="TxtAccPri" Grid.Column="0" Height="24" Background="#222" Foreground="White" BorderBrush="#555" VerticalContentAlignment="Center"/>
-                        <Button Name="BtnPickAccPri" Grid.Column="1" Content="..." Width="28" Height="24" Margin="5,0,0,0" Background="#333" BorderBrush="#555" Cursor="Hand" ToolTip="Pick Color"/>
+                        <Border Name="PrevAccPri" Grid.Column="1" Width="24" Height="24" Margin="5,0,0,0" BorderBrush="#555" BorderThickness="1" CornerRadius="2"/>
+                        <Button Name="BtnPickAccPri" Grid.Column="2" Content="..." Width="28" Height="24" Margin="5,0,0,0" Background="#333" BorderBrush="#555" Cursor="Hand" ToolTip="Pick Color"/>
                     </Grid>
                 </StackPanel>
                 <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,0,0">
                     <TextBlock Text="Secondary Accent:" Foreground="#CCC" FontSize="11"/>
                     <Grid>
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                         <TextBox Name="TxtAccSec" Grid.Column="0" Height="24" Background="#222" Foreground="White" BorderBrush="#555" VerticalContentAlignment="Center"/>
-                        <Button Name="BtnPickAccSec" Grid.Column="1" Content="..." Width="28" Height="24" Margin="5,0,0,0" Background="#333" BorderBrush="#555" Cursor="Hand" ToolTip="Pick Color"/>
+                        <Border Name="PrevAccSec" Grid.Column="1" Width="24" Height="24" Margin="5,0,0,0" BorderBrush="#555" BorderThickness="1" CornerRadius="2"/>
+                        <Button Name="BtnPickAccSec" Grid.Column="2" Content="..." Width="28" Height="24" Margin="5,0,0,0" Background="#333" BorderBrush="#555" Cursor="Hand" ToolTip="Pick Color"/>
                     </Grid>
                 </StackPanel>
             </Grid>
@@ -1036,22 +1062,20 @@ function Show-ThemePicker {
         </StackPanel>
     </Window>
 "@
-    # Inject current theme colors into the picker window itself
     $ThemeXAML = $ThemeXAML -replace '%%BG_MAIN%%', $ActiveColors.BG_Main
     $ThemeXAML = $ThemeXAML -replace '%%ACC_PRI%%', $ActiveColors.Acc_Pri
 
-    # FIX: Use StringReader to bypass ps2exe [xml] casting bugs
     $StringReader = New-Object System.IO.StringReader $ThemeXAML
     $XmlReader = [System.Xml.XmlReader]::Create($StringReader)
     $ThemeWin = [Windows.Markup.XamlReader]::Load($XmlReader)
 
     $ThemeCombo = $ThemeWin.FindName("ThemeCombo")
-    $TxtBgMain  = $ThemeWin.FindName("TxtBgMain"); $BtnPickBgMain = $ThemeWin.FindName("BtnPickBgMain")
-    $TxtBgSec   = $ThemeWin.FindName("TxtBgSec");  $BtnPickBgSec  = $ThemeWin.FindName("BtnPickBgSec")
-    $TxtBgCon   = $ThemeWin.FindName("TxtBgCon");  $BtnPickBgCon  = $ThemeWin.FindName("BtnPickBgCon")
-    $TxtBgBtn   = $ThemeWin.FindName("TxtBgBtn");  $BtnPickBgBtn  = $ThemeWin.FindName("BtnPickBgBtn")
-    $TxtAccPri  = $ThemeWin.FindName("TxtAccPri"); $BtnPickAccPri = $ThemeWin.FindName("BtnPickAccPri")
-    $TxtAccSec  = $ThemeWin.FindName("TxtAccSec"); $BtnPickAccSec = $ThemeWin.FindName("BtnPickAccSec")
+    $TxtBgMain  = $ThemeWin.FindName("TxtBgMain"); $BtnPickBgMain = $ThemeWin.FindName("BtnPickBgMain"); $PrevBgMain = $ThemeWin.FindName("PrevBgMain")
+    $TxtBgSec   = $ThemeWin.FindName("TxtBgSec");  $BtnPickBgSec  = $ThemeWin.FindName("BtnPickBgSec");  $PrevBgSec  = $ThemeWin.FindName("PrevBgSec")
+    $TxtBgCon   = $ThemeWin.FindName("TxtBgCon");  $BtnPickBgCon  = $ThemeWin.FindName("BtnPickBgCon");  $PrevBgCon  = $ThemeWin.FindName("PrevBgCon")
+    $TxtBgBtn   = $ThemeWin.FindName("TxtBgBtn");  $BtnPickBgBtn  = $ThemeWin.FindName("BtnPickBgBtn");  $PrevBgBtn  = $ThemeWin.FindName("PrevBgBtn")
+    $TxtAccPri  = $ThemeWin.FindName("TxtAccPri"); $BtnPickAccPri = $ThemeWin.FindName("BtnPickAccPri"); $PrevAccPri = $ThemeWin.FindName("PrevAccPri")
+    $TxtAccSec  = $ThemeWin.FindName("TxtAccSec"); $BtnPickAccSec = $ThemeWin.FindName("BtnPickAccSec"); $PrevAccSec = $ThemeWin.FindName("PrevAccSec")
 
     $BtnSave    = $ThemeWin.FindName("BtnSaveTheme")
     $ThemeStatus= $ThemeWin.FindName("ThemeStatus")
@@ -1059,14 +1083,22 @@ function Show-ThemePicker {
     foreach ($key in $Themes.Keys) { $ThemeCombo.Items.Add($key) | Out-Null }
     $ThemeCombo.Items.Add("Custom") | Out-Null
 
-    # Fallback if the user's saved theme name was renamed/deleted
     if ($ThemeCombo.Items.Contains($ActiveThemeName)) {
         $ThemeCombo.SelectedItem = $ActiveThemeName
     } else {
-        $ThemeCombo.SelectedItem = "PNW (Default)"
+        $ThemeCombo.SelectedItem = "Solarized Dark"
     }
 
-    # Enable/Disable inputs based on selection
+    # Helper to update the visual preview boxes
+    $UpdatePreviews = {
+        try { $PrevBgMain.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString($TxtBgMain.Text) } catch {}
+        try { $PrevBgSec.Background  = [System.Windows.Media.BrushConverter]::new().ConvertFromString($TxtBgSec.Text) } catch {}
+        try { $PrevBgCon.Background  = [System.Windows.Media.BrushConverter]::new().ConvertFromString($TxtBgCon.Text) } catch {}
+        try { $PrevBgBtn.Background  = [System.Windows.Media.BrushConverter]::new().ConvertFromString($TxtBgBtn.Text) } catch {}
+        try { $PrevAccPri.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString($TxtAccPri.Text) } catch {}
+        try { $PrevAccSec.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString($TxtAccSec.Text) } catch {}
+    }
+
     $ThemeCombo.Add_SelectionChanged({
         $sel = $ThemeCombo.SelectedItem
         $isCustom = ($sel -eq "Custom")
@@ -1083,16 +1115,14 @@ function Show-ThemePicker {
             $TxtBgMain.Text = $c.BG_Main; $TxtBgSec.Text = $c.BG_Sec; $TxtBgCon.Text = $c.BG_Con
             $TxtBgBtn.Text = $c.BG_Btn;   $TxtAccPri.Text = $c.Acc_Pri; $TxtAccSec.Text = $c.Acc_Sec
         }
+        &$UpdatePreviews
     })
 
-    # Trigger the selection change manually to populate the boxes on load
     $ThemeCombo.RaiseEvent((New-Object System.Windows.Controls.SelectionChangedEventArgs([System.Windows.Controls.Primitives.Selector]::SelectionChangedEvent, @(), @($ThemeCombo.SelectedItem))))
 
-    # --- COLOR PICKER HELPER FUNCTION ---
     function Get-ColorFromGrid ($InitialHex) {
         $colorDialog = New-Object System.Windows.Forms.ColorDialog
-        $colorDialog.FullOpen = $true # Opens the advanced grid automatically
-
+        $colorDialog.FullOpen = $true
         try {
             if ($InitialHex -match "^#[0-9A-Fa-f]{6}$") {
                 $colorDialog.Color = [System.Drawing.ColorTranslator]::FromHtml($InitialHex)
@@ -1100,27 +1130,25 @@ function Show-ThemePicker {
         } catch {}
 
         if ($colorDialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
-            # Convert the selected color back to a HEX string
             return "#{0:X2}{1:X2}{2:X2}" -f $colorDialog.Color.R, $colorDialog.Color.G, $colorDialog.Color.B
         }
         return $null
     }
 
-    # --- WIRE UP THE PICKER BUTTONS ---
-    $BtnPickBgMain.Add_Click({ $new = Get-ColorFromGrid $TxtBgMain.Text; if ($new) { $TxtBgMain.Text = $new } })
-    $BtnPickBgSec.Add_Click({  $new = Get-ColorFromGrid $TxtBgSec.Text;  if ($new) { $TxtBgSec.Text = $new } })
-    $BtnPickBgCon.Add_Click({  $new = Get-ColorFromGrid $TxtBgCon.Text;  if ($new) { $TxtBgCon.Text = $new } })
-    $BtnPickBgBtn.Add_Click({  $new = Get-ColorFromGrid $TxtBgBtn.Text;  if ($new) { $TxtBgBtn.Text = $new } })
-    $BtnPickAccPri.Add_Click({ $new = Get-ColorFromGrid $TxtAccPri.Text; if ($new) { $TxtAccPri.Text = $new } })
-    $BtnPickAccSec.Add_Click({ $new = Get-ColorFromGrid $TxtAccSec.Text; if ($new) { $TxtAccSec.Text = $new } })
+    $BtnPickBgMain.Add_Click({ $new = Get-ColorFromGrid $TxtBgMain.Text; if ($new) { $TxtBgMain.Text = $new; &$UpdatePreviews } })
+    $BtnPickBgSec.Add_Click({  $new = Get-ColorFromGrid $TxtBgSec.Text;  if ($new) { $TxtBgSec.Text = $new; &$UpdatePreviews } })
+    $BtnPickBgCon.Add_Click({  $new = Get-ColorFromGrid $TxtBgCon.Text;  if ($new) { $TxtBgCon.Text = $new; &$UpdatePreviews } })
+    $BtnPickBgBtn.Add_Click({  $new = Get-ColorFromGrid $TxtBgBtn.Text;  if ($new) { $TxtBgBtn.Text = $new; &$UpdatePreviews } })
+    $BtnPickAccPri.Add_Click({ $new = Get-ColorFromGrid $TxtAccPri.Text; if ($new) { $TxtAccPri.Text = $new; &$UpdatePreviews } })
+    $BtnPickAccSec.Add_Click({ $new = Get-ColorFromGrid $TxtAccSec.Text; if ($new) { $TxtAccSec.Text = $new; &$UpdatePreviews } })
 
     # --- SAVE LOGIC ---
     $BtnSave.Add_Click({
         $sel = $ThemeCombo.SelectedItem
         $newPrefs = @{ ThemeName = $sel; CustomColors = $null }
+        $colorsToApply = $Themes[$sel]
 
         if ($sel -eq "Custom") {
-            # Basic Hex Validation
             $hexRegex = "^#[0-9A-Fa-f]{6}$"
             if ($TxtBgMain.Text -notmatch $hexRegex -or $TxtAccPri.Text -notmatch $hexRegex) {
                 $ThemeStatus.Text = "Error: Invalid Hex Code format (e.g. #1E1E1E)"
@@ -1131,11 +1159,11 @@ function Show-ThemePicker {
                 BG_Main = $TxtBgMain.Text; BG_Sec = $TxtBgSec.Text; BG_Con = $TxtBgCon.Text
                 BG_Btn = $TxtBgBtn.Text; Acc_Pri = $TxtAccPri.Text; Acc_Sec = $TxtAccSec.Text
             }
+            $colorsToApply = $newPrefs.CustomColors
         }
 
         $UserPrefs[$env:USERNAME] = $newPrefs
 
-        # Save to JSON (PS 5.1 Safe Serialization)
         try {
             $exportObj = New-Object PSObject
             foreach ($key in $UserPrefs.Keys) {
@@ -1143,7 +1171,10 @@ function Show-ThemePicker {
             }
             $exportObj | ConvertTo-Json -Depth 3 | Set-Content $UsersFile -Force
 
-            $ThemeStatus.Text = "Saved! Please restart UHDC to apply changes."
+            # LIVE UPDATE: Apply colors instantly to the main window
+            Update-AppTheme $colorsToApply
+
+            $ThemeStatus.Text = "Saved and Applied!"
             $ThemeStatus.Foreground = "#00FF00"
         } catch {
             $ThemeStatus.Text = "Error saving to users.json"
@@ -1298,7 +1329,7 @@ $BtnIntune.Add_Click({
 
     $IntuneScript = Join-Path -Path $CoreFolder -ChildPath "IntuneMenu.ps1"
 
-    Start-Process PowerShell -ArgumentList "-WindowStyle Hidden -File `"$IntuneScript`" -TargetComputer `"$ComputerQuery`" -TargetUser `"$EmailToPass`" -SharedRoot `"$SharedRoot`" -ThemeB64 `"$ThemeB64`""
+    Start-Process PowerShell -ArgumentList "-WindowStyle Hidden -File `"$IntuneScript`" -TargetComputer `"$ComputerQuery`" -TargetUser `"$EmailToPass`" -SharedRoot `"$SharedRoot`" -ThemeB64 `"$global:ThemeB64`""
 })
 
 $BtnBookmarkBackup.Add_Click({
