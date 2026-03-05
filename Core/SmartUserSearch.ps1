@@ -2,6 +2,7 @@
 # DESCRIPTION: The core intelligence engine for the AD User Intelligence panel.
 # It queries Active Directory for account details, OR accepts a Computer name
 # to cross-reference the central UserHistory.json database.
+# Fully PS 5.1 Compatible.
 
 param(
     [Parameter(Mandatory=$false, Position=0)]
@@ -11,7 +12,10 @@ param(
     [string]$SharedRoot,
 
     [Parameter(Mandatory=$false)]
-    [hashtable]$SyncHash
+    [hashtable]$SyncHash,
+
+    [Parameter(Mandatory=$false)]
+    [string]$ThemeB64 # Added to prevent ParameterBinding crashes
 )
 
 # --- TRAINING MODE HELPER (WPF Safe) ---

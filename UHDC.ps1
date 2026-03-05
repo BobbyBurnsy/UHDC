@@ -890,15 +890,26 @@ function Invoke-UHDCScriptAsync {
     $PS = [powershell]::Create()
     [void]$PS.AddScript({
         param($Path, $Tgt, $ReqTgt, $Dispatcher, $OutBox, $PC1, $PC2, $SecTgt, $SharedRoot, $SyncHash, $IsTraining, $ThemeB64)
-        try {
+                try {
             $hashToPass = if ($IsTraining) { $SyncHash } else { $null }
 
+            # Dynamically build parameters to prevent ParameterBinding crashes on older scripts
+            $Splat = @{
+                SharedRoot = $SharedRoot
+                SyncHash   = $hashToPass
+            }
+
+            $ScriptCmd = Get-Command $Path -ErrorAction SilentlyContinue
+            if ($ScriptCmd -and $ScriptCmd.Parameters.ContainsKey('ThemeB64')) {
+                $Splat['ThemeB64'] = $ThemeB64
+            }
+
             if ($ReqTgt -and $SecTgt) {
-                $Result = & $Path $Tgt $SecTgt -SharedRoot $SharedRoot -SyncHash $hashToPass -ThemeB64 $ThemeB64 *>&1 | Out-String
+                $Result = & $Path $Tgt $SecTgt @Splat *>&1 | Out-String
             } elseif ($ReqTgt) {
-                $Result = & $Path $Tgt -SharedRoot $SharedRoot -SyncHash $hashToPass -ThemeB64 $ThemeB64 *>&1 | Out-String
+                $Result = & $Path $Tgt @Splat *>&1 | Out-String
             } else {
-                $Result = & $Path -SharedRoot $SharedRoot -SyncHash $hashToPass -ThemeB64 $ThemeB64 *>&1 | Out-String
+                $Result = & $Path @Splat *>&1 | Out-String
             }
 
             $Dispatcher.Invoke([Action]{
