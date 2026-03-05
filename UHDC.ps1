@@ -2,7 +2,7 @@
 # UHDC.ps1 - Unified Help Desk Console (Master Script)
 # Place this script in the ROOT folder (e.g., \\Server\Share\UHDC\)
 # DESCRIPTION: The main GUI and asynchronous runspace engine for the UHDC platform.
-# Fully optimized for PowerShell 5.1 compatibility.
+# Fully optimized for PowerShell 5.1 and ps2exe compilation compatibility.
 # ==============================================================================================
 
 # ------------------------------------------------------------------
@@ -164,7 +164,8 @@ $RunspacePool.Open()
 # ------------------------------------------------------------------
 # 1. DEFINE THE UI (DYNAMIC 4-QUADRANT XAML)
 # ------------------------------------------------------------------
-[xml]$XAML = @"
+# FIX: Cast as [string] instead of [xml] to prevent ps2exe parsing failures
+[string]$XAML = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Unified Help Desk Console (UHDC)" Height="950" Width="1350" Background="%%BG_MAIN%%" WindowStartupLocation="CenterScreen">
@@ -479,7 +480,9 @@ $XAML = $XAML -replace '%%BG_BTN%%',  $ActiveColors.BG_Btn
 $XAML = $XAML -replace '%%ACC_PRI%%', $ActiveColors.Acc_Pri
 $XAML = $XAML -replace '%%ACC_SEC%%', $ActiveColors.Acc_Sec
 
-$XmlReader = New-Object System.Xml.XmlNodeReader $XAML
+# FIX: Use StringReader to bypass ps2exe [xml] casting bugs
+$StringReader = New-Object System.IO.StringReader $XAML
+$XmlReader = [System.Xml.XmlReader]::Create($StringReader)
 $Form = [System.Windows.Markup.XamlReader]::Load($XmlReader)
 
 # ------------------------------------------------------------------
@@ -583,7 +586,8 @@ $global:UHDCSync = [hashtable]::Synchronized(@{
 })
 
 function Show-StepDialog {
-    [xml]$TrainXAML = @"
+    # FIX: Cast as [string] instead of [xml]
+    [string]$TrainXAML = @"
     <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
             Title="UHDC Training Mode - Step Execution" WindowStyle="ToolWindow" WindowStartupLocation="CenterScreen" Topmost="True" ResizeMode="NoResize" SizeToContent="Height" Width="750" Background="%%BG_MAIN%%">
@@ -689,8 +693,10 @@ function Show-StepDialog {
     $TrainXAML = $TrainXAML -replace '%%ACC_PRI%%', $ActiveColors.Acc_Pri
     $TrainXAML = $TrainXAML -replace '%%ACC_SEC%%', $ActiveColors.Acc_Sec
 
-    $Reader = (New-Object System.Xml.XmlNodeReader $TrainXAML)
-    $StepWin = [Windows.Markup.XamlReader]::Load($Reader)
+    # FIX: Use StringReader to bypass ps2exe [xml] casting bugs
+    $StringReader = New-Object System.IO.StringReader $TrainXAML
+    $XmlReader = [System.Xml.XmlReader]::Create($StringReader)
+    $StepWin = [Windows.Markup.XamlReader]::Load($XmlReader)
 
     # Map UI Elements
     $StepDesc    = $StepWin.FindName("StepDesc")
@@ -953,7 +959,8 @@ function Invoke-UHDCScriptAsync {
 # 5. THEME PICKER GUI
 # ------------------------------------------------------------------
 function Show-ThemePicker {
-    [xml]$ThemeXAML = @"
+    # FIX: Cast as [string] instead of [xml]
+    [string]$ThemeXAML = @"
     <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
             Title="UHDC Theme Settings" Height="480" Width="450" Background="%%BG_MAIN%%" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Topmost="True">
         <StackPanel Margin="20">
@@ -1033,8 +1040,10 @@ function Show-ThemePicker {
     $ThemeXAML = $ThemeXAML -replace '%%BG_MAIN%%', $ActiveColors.BG_Main
     $ThemeXAML = $ThemeXAML -replace '%%ACC_PRI%%', $ActiveColors.Acc_Pri
 
-    $Reader = (New-Object System.Xml.XmlNodeReader $ThemeXAML)
-    $ThemeWin = [Windows.Markup.XamlReader]::Load($Reader)
+    # FIX: Use StringReader to bypass ps2exe [xml] casting bugs
+    $StringReader = New-Object System.IO.StringReader $ThemeXAML
+    $XmlReader = [System.Xml.XmlReader]::Create($StringReader)
+    $ThemeWin = [Windows.Markup.XamlReader]::Load($XmlReader)
 
     $ThemeCombo = $ThemeWin.FindName("ThemeCombo")
     $TxtBgMain  = $ThemeWin.FindName("TxtBgMain"); $BtnPickBgMain = $ThemeWin.FindName("BtnPickBgMain")
