@@ -25,15 +25,12 @@ param(
 # --- TRAINING MODE HELPER (WPF Safe) ---
 function Wait-TrainingStep {
     param([string]$Desc, [string]$Code)
-    # If Training Mode is unchecked in UHDC, $SyncHash is passed as $null, bypassing this entirely.
     if ($null -ne $SyncHash) {
         $SyncHash.StepDesc = $Desc
         $SyncHash.StepCode = $Code
         $SyncHash.StepReady = $true
         $SyncHash.StepAck = $false
 
-        # Pause the script until the GUI user clicks Execute or Abort
-        # Includes a Dispatcher DoEvents workaround so the WPF UI doesn't freeze
         while (-not $SyncHash.StepAck) {
             Start-Sleep -Milliseconds 200
             $Dispatcher = [System.Windows.Threading.Dispatcher]::CurrentDispatcher
@@ -65,7 +62,6 @@ try {
     }
 } catch { }
 
-# Determine the Technician's Domain to prevent cross-agency lookups
 $TechUPN = whoami /upn 2>$null
 if (-not $TechUPN) {
     try { $TechUPN = (Get-ADUser $env:USERNAME -Properties UserPrincipalName).UserPrincipalName } catch {}
@@ -73,16 +69,11 @@ if (-not $TechUPN) {
 $TechDomain = if ($TechUPN -match "@(.*)$") { $matches[1] } else { "" }
 
 # ------------------------------------------------------------------
-# THEME ENGINE INTEGRATION (Base64 Decoding for PS 5.1 Safety)
+# THEME ENGINE INTEGRATION
 # ------------------------------------------------------------------
-# Default fallback colors
 $ActiveColors = @{
-    BG_Main = "#1E1E1E"
-    BG_Sec  = "#111111"
-    BG_Con  = "#0C0C0C"
-    BG_Btn  = "#2D2D30"
-    Acc_Pri = "#00A2ED"
-    Acc_Sec = "#00FF00"
+    BG_Main = "#1E1E1E"; BG_Sec  = "#111111"; BG_Con  = "#0C0C0C"
+    BG_Btn  = "#2D2D30"; Acc_Pri = "#00A2ED"; Acc_Sec = "#00FF00"
 }
 
 if (-not [string]::IsNullOrWhiteSpace($ThemeB64)) {
@@ -101,9 +92,8 @@ if (-not [string]::IsNullOrWhiteSpace($ThemeB64)) {
 }
 
 # ------------------------------------------------------------------
-# GRAPH API AUTHENTICATION (PS 5.1 TLS 1.2 ENFORCEMENT)
+# GRAPH API AUTHENTICATION
 # ------------------------------------------------------------------
-# CRITICAL: PS 5.1 defaults to TLS 1.0. Microsoft Graph requires TLS 1.2.
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $scopes = @(
@@ -129,13 +119,12 @@ Add-Type -AssemblyName PresentationFramework
 # ------------------------------------------------------------------
 # UI DEFINITION (DYNAMIC XAML)
 # ------------------------------------------------------------------
-[xml]$XAML = @"
+[string]$XAML = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="UHDC: $OrgName Device Manager" Height="580" Width="720" Background="%%BG_MAIN%%" WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
-        <!-- Standard Button Style -->
         <Style x:Key="StdBtn" TargetType="Button">
             <Setter Property="Background" Value="%%BG_BTN%%"/>
             <Setter Property="Foreground" Value="%%ACC_PRI%%"/>
@@ -168,12 +157,10 @@ Add-Type -AssemblyName PresentationFramework
             </Setter>
         </Style>
 
-        <!-- Action Button Style (Secondary Accent Text) -->
         <Style x:Key="ActionBtn" TargetType="Button" BasedOn="{StaticResource StdBtn}">
             <Setter Property="Foreground" Value="%%ACC_SEC%%"/>
         </Style>
 
-        <!-- Danger Button Style (Red Hover) -->
         <Style x:Key="DangerBtn" TargetType="Button">
             <Setter Property="Background" Value="%%BG_BTN%%"/>
             <Setter Property="Foreground" Value="%%ACC_PRI%%"/>
@@ -207,7 +194,6 @@ Add-Type -AssemblyName PresentationFramework
             </Setter>
         </Style>
 
-        <!-- Warning Button Style (Yellow Hover) -->
         <Style x:Key="WarningBtn" TargetType="Button">
             <Setter Property="Background" Value="%%BG_BTN%%"/>
             <Setter Property="Foreground" Value="%%ACC_PRI%%"/>
@@ -241,7 +227,6 @@ Add-Type -AssemblyName PresentationFramework
             </Setter>
         </Style>
 
-        <!-- Master Admin Button Style (Purple Hover) -->
         <Style x:Key="MasterBtn" TargetType="Button">
             <Setter Property="Background" Value="%%BG_BTN%%"/>
             <Setter Property="Foreground" Value="%%ACC_PRI%%"/>
@@ -315,7 +300,6 @@ Add-Type -AssemblyName PresentationFramework
 </Window>
 "@
 
-# Inject the active theme colors into the XAML string before loading
 $XAML = $XAML -replace '%%BG_MAIN%%', $ActiveColors.BG_Main
 $XAML = $XAML -replace '%%BG_SEC%%',  $ActiveColors.BG_Sec
 $XAML = $XAML -replace '%%BG_CON%%',  $ActiveColors.BG_Con
@@ -323,8 +307,9 @@ $XAML = $XAML -replace '%%BG_BTN%%',  $ActiveColors.BG_Btn
 $XAML = $XAML -replace '%%ACC_PRI%%', $ActiveColors.Acc_Pri
 $XAML = $XAML -replace '%%ACC_SEC%%', $ActiveColors.Acc_Sec
 
-$Reader = (New-Object System.Xml.XmlNodeReader $XAML)
-$Form = [Windows.Markup.XamlReader]::Load($Reader)
+$StringReader = New-Object System.IO.StringReader $XAML
+$XmlReader = [System.Xml.XmlReader]::Create($StringReader)
+$Form = [Windows.Markup.XamlReader]::Load($XmlReader)
 
 $HeaderTitle = $Form.FindName("HeaderTitle")
 $DeviceList  = $Form.FindName("DeviceList")
@@ -346,7 +331,7 @@ $ResolvedUser = $null
 $GlobalDevices = @()
 
 # ------------------------------------------------------------------
-# INITIALIZATION (DUAL-VECTOR SEARCH & DOMAIN FILTERING)
+# INITIALIZATION
 # ------------------------------------------------------------------
 $Form.Add_Loaded({
     if ([string]::IsNullOrWhiteSpace($TargetUser) -and [string]::IsNullOrWhiteSpace($TargetComputer)) {
@@ -358,18 +343,12 @@ $Form.Add_Loaded({
     $RawDeviceList = @()
 
     try {
-        Wait-TrainingStep `
-            -Desc "STEP 1: QUERY INTUNE & ENFORCE DOMAIN BOUNDARIES`n`nWHEN TO USE THIS:`nThis happens automatically when the Intune Menu opens. It searches Microsoft Entra ID for the target user or computer.`n`nWHAT IT DOES:`nWe are querying the Microsoft Graph API. Crucially, we extract your technician email domain (e.g., @dfw.state.gov) and compare it against the target's UserPrincipalName. If you try to look up a user or device belonging to a different agency (like Liquor Control), the script will block the query to enforce tenant security boundaries.`n`nIN-PERSON EQUIVALENT:`nLogging into endpoint.microsoft.com, searching for the user, and verifying their department/agency matches your support scope before making changes." `
-            -Code "`$users = Get-MgUser -Filter `"userPrincipalName eq '`$TargetUser'`"`nif (`$users.UserPrincipalName -notmatch `$TechDomain) { throw 'Cross-Agency Block' }"
-
-        # VECTOR 1: Search explicitly for the Computer Name
         if (-not [string]::IsNullOrWhiteSpace($TargetComputer)) {
             $HeaderTitle.Text = "Scanning Intune for device: $TargetComputer..."
             [System.Windows.Forms.Application]::DoEvents()
 
             $deviceMatch = Get-MgDeviceManagementManagedDevice -Filter "deviceName eq '$TargetComputer'" -ErrorAction SilentlyContinue
             if ($deviceMatch) {
-                # DOMAIN FILTER: Ensure the device's primary user matches the tech's domain
                 if ($TechDomain -and $deviceMatch.UserPrincipalName -and $deviceMatch.UserPrincipalName -notmatch $TechDomain) {
                     [System.Windows.MessageBox]::Show("Access Denied: The requested device ($TargetComputer) belongs to a different agency/domain ($($deviceMatch.UserPrincipalName)).", "Cross-Agency Block", "OK", "Error")
                 } else {
@@ -379,7 +358,6 @@ $Form.Add_Loaded({
             }
         }
 
-        # VECTOR 2: Search for the User's explicitly assigned devices
         if (-not [string]::IsNullOrWhiteSpace($TargetUser)) {
             $HeaderTitle.Text = "Scanning Azure AD for user: $TargetUser..."
             [System.Windows.Forms.Application]::DoEvents()
@@ -389,7 +367,6 @@ $Form.Add_Loaded({
             if ($users -and $users.Count -gt 0) {
                 $ResolvedUser = $users[0]
 
-                # DOMAIN FILTER: Ensure the user belongs to the tech's domain
                 if ($TechDomain -and $ResolvedUser.UserPrincipalName -notmatch $TechDomain) {
                     [System.Windows.MessageBox]::Show("Access Denied: The requested user ($($ResolvedUser.UserPrincipalName)) belongs to a different agency/domain.", "Cross-Agency Block", "OK", "Error")
                     $ResolvedUser = $null
@@ -403,7 +380,6 @@ $Form.Add_Loaded({
             }
         }
 
-        # MERGE AND DE-DUPLICATE RESULTS
         $HeaderTitle.Text = $HeaderString
 
         if ($RawDeviceList.Count -gt 0) {
@@ -422,16 +398,12 @@ $Form.Add_Loaded({
     }
 })
 
-# ------------------------------------------------------------------
-# DYNAMIC CONTEXT BUTTONS
-# ------------------------------------------------------------------
 $DeviceList.Add_SelectionChanged({
     if ($DeviceList.SelectedIndex -ge 0 -and $GlobalDevices) {
         $ActionPanel.Visibility = "Visible"
         $OutputText.Text = "Ready..."
         $selectedDev = $GlobalDevices[$DeviceList.SelectedIndex]
 
-        # Reset all buttons to hidden
         $BtnBitLocker.Visibility = "Collapsed"
         $BtnLAPS.Visibility      = "Collapsed"
         $BtnUnlock.Visibility    = "Collapsed"
@@ -440,18 +412,15 @@ $DeviceList.Add_SelectionChanged({
         $BtnReboot.Visibility    = "Collapsed"
 
         if ($selectedDev) {
-            # Sync and Wipe are available for ALL managed devices
             $BtnSync.Visibility = "Visible"
             $BtnWipe.Visibility = "Visible"
 
-            # Windows-specific actions
             if ($selectedDev.OperatingSystem -match "Windows") {
                 $BtnBitLocker.Visibility = "Visible"
                 $BtnLAPS.Visibility      = "Visible"
                 $BtnReboot.Visibility    = "Visible"
             }
 
-            # Mobile-specific actions
             if ($selectedDev.OperatingSystem -match "iOS|Android|iPadOS") {
                 $BtnUnlock.Visibility = "Visible"
             }
@@ -459,16 +428,9 @@ $DeviceList.Add_SelectionChanged({
     }
 })
 
-# ------------------------------------------------------------------
-# ACTION BUTTONS
-# ------------------------------------------------------------------
 $BtnBitLocker.Add_Click({
     $dev = $GlobalDevices[$DeviceList.SelectedIndex]
-
-    Wait-TrainingStep `
-        -Desc "STEP 2: RETRIEVE BITLOCKER KEY`n`nWHEN TO USE THIS:`nUse this when a user is locked out of their laptop by a blue BitLocker recovery screen (usually caused by a BIOS update, docking station change, or multiple failed PIN attempts).`n`nWHAT IT DOES:`nWe are querying the Microsoft Graph API for the 'BitlockerRecoveryKey' object associated with this specific Azure AD Device ID. This works even if the laptop isn't explicitly assigned to the user, as long as you searched for the correct PC name.`n`nIN-PERSON EQUIVALENT:`nLogging into portal.azure.com, navigating to Microsoft Entra ID > Devices, searching for the computer name, and clicking 'Recovery Keys' to view the 48-digit code." `
-        -Code "Get-MgInformationProtectionBitlockerRecoveryKey -Filter `"deviceId eq '`$(`$dev.AzureAdDeviceId)'`""
-
+    Wait-TrainingStep -Desc "STEP 2: RETRIEVE BITLOCKER KEY" -Code "Get-MgInformationProtectionBitlockerRecoveryKey -Filter `"deviceId eq '`$(`$dev.AzureAdDeviceId)'`""
     $OutputText.Text = "UHDC: Querying Entra ID for keys..."
     [System.Windows.Forms.Application]::DoEvents()
     try {
@@ -480,11 +442,7 @@ $BtnBitLocker.Add_Click({
 
 $BtnLAPS.Add_Click({
     $dev = $GlobalDevices[$DeviceList.SelectedIndex]
-
-    Wait-TrainingStep `
-        -Desc "STEP 3: RETRIEVE CLOUD LAPS`n`nWHEN TO USE THIS:`nUse this when you need local administrator rights on an Entra-joined (Azure AD) machine to install software or bypass UAC, and the standard on-prem LAPS password doesn't work.`n`nWHAT IT DOES:`nWe are querying the Graph API for 'deviceLocalCredentials'. This retrieves the rotating, cloud-managed local administrator password for this specific device.`n`nIN-PERSON EQUIVALENT:`nLogging into the Intune Portal, selecting the device, and clicking 'Local admin password' in the monitor pane." `
-        -Code "Invoke-MgGraphRequest -Method GET -Uri `"https://graph.microsoft.com/v1.0/deviceLocalCredentials?`$filter=deviceId eq '`$(`$dev.AzureAdDeviceId)'`""
-
+    Wait-TrainingStep -Desc "STEP 3: RETRIEVE CLOUD LAPS" -Code "Invoke-MgGraphRequest -Method GET -Uri `"https://graph.microsoft.com/v1.0/deviceLocalCredentials?`$filter=deviceId eq '`$(`$dev.AzureAdDeviceId)'`""
     $OutputText.Text = "UHDC: Retrieving Cloud LAPS..."
     [System.Windows.Forms.Application]::DoEvents()
     try {
@@ -497,11 +455,7 @@ $BtnLAPS.Add_Click({
 
 $BtnUnlock.Add_Click({
     $dev = $GlobalDevices[$DeviceList.SelectedIndex]
-
-    Wait-TrainingStep `
-        -Desc "STEP 4: REMOVE MOBILE PASSCODE`n`nWHEN TO USE THIS:`nUse this when a user has forgotten the PIN/Passcode to their agency-issued iPhone or iPad and is locked out.`n`nWHAT IT DOES:`nWe are sending an MDM (Mobile Device Management) command to Apple/Google via Intune to forcefully clear the lock screen passcode, allowing the user to swipe in and set a new one.`n`nIN-PERSON EQUIVALENT:`nLogging into Intune, navigating to Devices > iOS/iPadOS, selecting the phone, and clicking the 'Remove passcode' action at the top of the screen." `
-        -Code "Invoke-MgRemoveDeviceManagementManagedDevicePasscode -ManagedDeviceId `$dev.Id"
-
+    Wait-TrainingStep -Desc "STEP 4: REMOVE MOBILE PASSCODE" -Code "Invoke-MgRemoveDeviceManagementManagedDevicePasscode -ManagedDeviceId `$dev.Id"
     if ([System.Windows.MessageBox]::Show("Remove Passcode from this mobile device?", "UHDC Confirm", "YesNo") -eq "Yes") {
         Invoke-MgRemoveDeviceManagementManagedDevicePasscode -ManagedDeviceId $dev.Id
         $OutputText.Text = "UHDC: Mobile unlock command dispatched."
@@ -510,11 +464,7 @@ $BtnUnlock.Add_Click({
 
 $BtnWipe.Add_Click({
     $dev = $GlobalDevices[$DeviceList.SelectedIndex]
-
-    Wait-TrainingStep `
-        -Desc "STEP 5: REMOTE WIPE`n`nWHEN TO USE THIS:`nUse this when a device (Laptop or Phone) is reported lost/stolen, or when an employee is terminated and the device needs to be factory reset before being reissued.`n`nWHAT IT DOES:`nWe are sending a destructive MDM command to factory reset the device. This will permanently erase all data, apps, and settings.`n`nIN-PERSON EQUIVALENT:`nLogging into Intune, selecting the device, and clicking the 'Wipe' button." `
-        -Code "Invoke-MgWipeDeviceManagementManagedDevice -ManagedDeviceId `$dev.Id"
-
+    Wait-TrainingStep -Desc "STEP 5: REMOTE WIPE" -Code "Invoke-MgWipeDeviceManagementManagedDevice -ManagedDeviceId `$dev.Id"
     $msg = "WARNING: You are about to issue a REMOTE FACTORY RESET for $($dev.DeviceName).`n`nThis will permanently erase all data on the device. Are you absolutely sure?"
     if ([System.Windows.MessageBox]::Show($msg, "UHDC DANGER: WIPE DEVICE", "YesNo", "Warning") -eq "Yes") {
         $OutputText.Text = "UHDC: Sending Wipe command..."
@@ -533,11 +483,7 @@ $BtnMFA.Add_Click({
         $OutputText.Text = "MFA requires a successfully linked User Account."
         return
     }
-
-    Wait-TrainingStep `
-        -Desc "STEP 6: VIEW MFA METHODS`n`nWHEN TO USE THIS:`nUse this when a user is not receiving their MFA prompts, or they got a new phone and need to know what number is currently registered to their account.`n`nWHAT IT DOES:`nWe are querying the user's 'AuthenticationPhoneMethod' objects in Entra ID to list all registered SMS/Voice numbers.`n`nIN-PERSON EQUIVALENT:`nLogging into portal.azure.com, navigating to Users, selecting the user, and clicking 'Authentication methods' on the left pane." `
-        -Code "Get-MgUserAuthenticationPhoneMethod -UserId `$ResolvedUser.Id"
-
+    Wait-TrainingStep -Desc "STEP 6: VIEW MFA METHODS" -Code "Get-MgUserAuthenticationPhoneMethod -UserId `$ResolvedUser.Id"
     $OutputText.Text = "UHDC: Fetching registered MFA phones..."
     [System.Windows.Forms.Application]::DoEvents()
     try {
@@ -555,11 +501,7 @@ $BtnClearMFA.Add_Click({
         $OutputText.Text = "MFA requires a successfully linked User Account."
         return
     }
-
-    Wait-TrainingStep `
-        -Desc "STEP 7: CLEAR MFA METHODS`n`nWHEN TO USE THIS:`nUse this when a user has lost their phone or changed numbers and is completely locked out of their account because they cannot approve the MFA prompt.`n`nWHAT IT DOES:`nWe are iterating through all registered phone authentication methods for this user and deleting them. This forces the user to re-register their MFA (e.g., set up the Authenticator app or a new phone number) the next time they log in.`n`nIN-PERSON EQUIVALENT:`nLogging into Entra ID > Users > Authentication Methods, clicking the three dots next to their registered phone number, and selecting 'Delete'." `
-        -Code "`$methods = Get-MgUserAuthenticationPhoneMethod -UserId `$ResolvedUser.Id`nforeach (`$m in `$methods) { Remove-MgUserAuthenticationPhoneMethod -UserId `$ResolvedUser.Id -PhoneAuthenticationMethodId `$m.Id }"
-
+    Wait-TrainingStep -Desc "STEP 7: CLEAR MFA METHODS" -Code "`$methods = Get-MgUserAuthenticationPhoneMethod -UserId `$ResolvedUser.Id`nforeach (`$m in `$methods) { Remove-MgUserAuthenticationPhoneMethod -UserId `$ResolvedUser.Id -PhoneAuthenticationMethodId `$m.Id }"
     if ([System.Windows.MessageBox]::Show("Are you sure you want to DELETE all registered MFA phone numbers for $($ResolvedUser.DisplayName)? They will be forced to re-register on next login.", "Clear MFA", "YesNo", "Warning") -eq "Yes") {
         $OutputText.Text = "UHDC: Clearing MFA methods..."
         [System.Windows.Forms.Application]::DoEvents()
@@ -582,11 +524,7 @@ $BtnAddPhone.Add_Click({
     }
     $newPhone = $InputPhone.Text.Trim()
     if ($newPhone -match "^\+1") {
-
-        Wait-TrainingStep `
-            -Desc "STEP 8: ADD SMS MFA`n`nWHEN TO USE THIS:`nUse this to quickly help a user set up their new cell phone for text-message MFA without requiring them to navigate the complex Microsoft security setup pages.`n`nWHAT IT DOES:`nWe are injecting a new 'mobile' PhoneAuthenticationMethod directly into the user's Entra ID profile.`n`nIN-PERSON EQUIVALENT:`nLogging into Entra ID > Users > Authentication Methods, clicking 'Add authentication method', selecting 'Phone number', and typing in the new cell number." `
-            -Code "New-MgUserAuthenticationPhoneMethod -UserId `$ResolvedUser.Id -PhoneType `"mobile`" -PhoneNumber `$newPhone"
-
+        Wait-TrainingStep -Desc "STEP 8: ADD SMS MFA" -Code "New-MgUserAuthenticationPhoneMethod -UserId `$ResolvedUser.Id -PhoneType `"mobile`" -PhoneNumber `$newPhone"
         $OutputText.Text = "UHDC: Adding $newPhone to account..."
         [System.Windows.Forms.Application]::DoEvents()
         try {

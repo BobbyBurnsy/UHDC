@@ -27,7 +27,6 @@ function Wait-TrainingStep {
         $SyncHash.StepReady = $true
         $SyncHash.StepAck = $false
 
-        # Pause the script until the GUI user clicks Execute or Abort
         while (-not $SyncHash.StepAck) { 
             Start-Sleep -Milliseconds 200 
             $Dispatcher = [System.Windows.Threading.Dispatcher]::CurrentDispatcher
@@ -116,7 +115,6 @@ function Load-Lib {
             if ($raw -is [System.Array]) { return $raw } else { return @($raw) }
         } catch { return @() }
     } else { 
-        # Auto-generate a template if it doesn't exist
         $default = @(
             [PSCustomObject]@{ ID=1; Name="Google Chrome (Enterprise)"; Path="\\server\share\Software\GoogleChromeStandaloneEnterprise64.msi"; Args="/qn /norestart" }
         )
@@ -130,12 +128,9 @@ function Save-Lib {
     try {
         $arr = @($d)
         $jsonOutput = $arr | ConvertTo-Json -Depth 2 -ErrorAction Stop
-
-        # PS 5.1 Single-Item Array Protection
         if ($arr.Count -eq 1 -and $jsonOutput -notmatch "^\s*\[") {
             $jsonOutput = "[$jsonOutput]"
         }
-
         Set-Content -Path $LibraryFile -Value $jsonOutput -Force
     } catch {
         Write-Host " [UHDC] [!] Failed to save Software Library." -ForegroundColor Red
@@ -150,7 +145,7 @@ Add-Type -AssemblyName PresentationFramework
 function Show-ThemedInputBox {
     param([string]$Title, [string]$Prompt, [string]$DefaultText = "")
 
-    [xml]$InputXAML = @"
+    [string]$InputXAML = @"
     <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
             Title="$Title" SizeToContent="Height" Width="450" Background="%%BG_MAIN%%" WindowStartupLocation="CenterScreen" Topmost="True" ResizeMode="NoResize">
         <StackPanel Margin="15">
@@ -167,8 +162,9 @@ function Show-ThemedInputBox {
     $InputXAML = $InputXAML -replace '%%BG_SEC%%', $ActiveColors.BG_Sec
     $InputXAML = $InputXAML -replace '%%ACC_PRI%%', $ActiveColors.Acc_Pri
 
-    $Reader = (New-Object System.Xml.XmlNodeReader $InputXAML)
-    $InputWin = [Windows.Markup.XamlReader]::Load($Reader)
+    $StringReader = New-Object System.IO.StringReader $InputXAML
+    $XmlReader = [System.Xml.XmlReader]::Create($StringReader)
+    $InputWin = [System.Windows.Markup.XamlReader]::Load($XmlReader)
 
     $InputBox = $InputWin.FindName("InputBox")
     $BtnOK = $InputWin.FindName("BtnOK")
@@ -178,8 +174,6 @@ function Show-ThemedInputBox {
         $InputBox.SelectAll()
     })
 
-    # PS 5.1 Fix: Setting DialogResult to $true automatically closes the window
-    # and allows ShowDialog() to evaluate properly without scope issues.
     $BtnOK.Add_Click({ 
         $InputWin.DialogResult = $true 
     })
@@ -206,7 +200,7 @@ while ($true) {
     $MenuOptions += [PSCustomObject]@{ Action = "ADD";    Name = "[+] Add New App to Library"; Path = "---"; Args = "---"; ID = "" }
     $MenuOptions += [PSCustomObject]@{ Action = "DELETE"; Name = "[-] Delete App from Library";Path = "---"; Args = "---"; ID = "" }
 
-    [xml]$MenuXAML = @"
+    [string]$MenuXAML = @"
     <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
             Title="UHDC: Remote Installer - $Target" Height="450" Width="750" Background="%%BG_MAIN%%" WindowStartupLocation="CenterScreen" Topmost="True">
         <Grid Margin="15">
@@ -239,8 +233,9 @@ while ($true) {
     $MenuXAML = $MenuXAML -replace '%%BG_BTN%%', $ActiveColors.BG_Btn
     $MenuXAML = $MenuXAML -replace '%%ACC_PRI%%', $ActiveColors.Acc_Pri
 
-    $MenuReader = (New-Object System.Xml.XmlNodeReader $MenuXAML)
-    $MenuWin = [Windows.Markup.XamlReader]::Load($MenuReader)
+    $StringReader = New-Object System.IO.StringReader $MenuXAML
+    $XmlReader = [System.Xml.XmlReader]::Create($StringReader)
+    $MenuWin = [System.Windows.Markup.XamlReader]::Load($XmlReader)
 
     $AppList = $MenuWin.FindName("AppList")
     $BtnExecute = $MenuWin.FindName("BtnExecute")
@@ -266,16 +261,18 @@ while ($true) {
             $lib += [PSCustomObject]@{ID=$newID; Name=$n.Trim(); Path=$p.Trim(); Args=$a.Trim()}
             Save-Lib $lib
             Write-Host " [UHDC] [+] Added '$n' to Library."
-            continue # Reloads the menu
+            continue 
         }
         elseif ($Selection.Action -eq "DELETE") {
             if ($lib.Count -eq 0) { Write-Host " [UHDC] [i] Library is already empty."; continue }
 
-            # Re-use the menu for deletion
-            $DelWin = [Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader $MenuXAML))
+            $StringReaderDel = New-Object System.IO.StringReader $MenuXAML
+            $XmlReaderDel = [System.Xml.XmlReader]::Create($StringReaderDel)
+            $DelWin = [System.Windows.Markup.XamlReader]::Load($XmlReaderDel)
+
             $DelWin.Title = "UHDC: Delete App from Library"
             $DelWin.FindName("BtnExecute").Content = "Delete Selected"
-            $DelWin.FindName("BtnExecute").Background = "#DC3545" # Red for delete
+            $DelWin.FindName("BtnExecute").Background = "#DC3545"
             $DelList = $DelWin.FindName("AppList")
             foreach ($item in $lib) { $DelList.Items.Add($item) | Out-Null }
 
@@ -289,18 +286,18 @@ while ($true) {
                 Save-Lib $lib
                 Write-Host " [UHDC] [-] Removed '$($delSel.Name)' from Library."
             }
-            continue # Reloads the menu
+            continue 
         }
         elseif ($Selection.Action -eq "CUSTOM") {
             $path = Show-ThemedInputBox -Title "UHDC Custom Install" -Prompt "Enter UNC Path to Installer:" -DefaultText "\\server\share\installer.exe"
             if (-not $path) { continue }
             $args = Show-ThemedInputBox -Title "UHDC Custom Install" -Prompt "Enter Silent Switches (e.g., /S /q):"
             $installer = [PSCustomObject]@{Name="Custom App"; Path=$path.Trim(); Args=$args.Trim()}
-            break # Exit loop to install
+            break 
         }
         elseif ($Selection.Action -eq "INSTALL") {
             $installer = $Selection
-            break # Exit loop to install
+            break 
         }
     } else {
         Write-Host " [UHDC] [i] Installation aborted by user."
@@ -317,38 +314,31 @@ if ($installer) {
     Write-Host "      Path: $($installer.Path)"
     Write-Host "      Args: $($installer.Args)"
 
-    # STANDARD PATHING: Rely strictly on the \Core folder as defined by UHDC
     $psExecPath = Join-Path -Path $SharedRoot -ChildPath "Core\psexec.exe"
 
     if (Test-Path $psExecPath) {
         try {
-
             Wait-TrainingStep `
                 -Desc "STEP 1: SILENT REMOTE INSTALLATION`n`nWHEN TO USE THIS:`nUse this when a user needs a standard application (like Google Chrome, Adobe Reader, or Zoom) installed, but they do not have local administrator rights, or you want to install it in the background without interrupting their work.`n`nWHAT IT DOES:`nWe are using PsExec to connect to the target PC as the 'SYSTEM' account. We then execute the installer directly from the network share using 'silent' command-line switches (like /S or /qn). This bypasses UAC prompts and hides the installation wizard from the user.`n`nIN-PERSON EQUIVALENT:`nIf you were physically at the user's desk, you would open File Explorer, navigate to the network share, double-click the installer, type in your admin credentials when prompted by UAC, and click 'Next' through the installation wizard." `
                 -Code "psexec.exe \\$Target -s `"$($installer.Path)`" $($installer.Args)"
 
             Write-Host "  > [UHDC] Installing in background... (Please wait)"
 
-            # Execute PsExec silently
             Start-Process $psExecPath -ArgumentList "/accepteula \\$Target -s `"$($installer.Path)`" $($installer.Args)" -Wait -NoNewWindow
 
             Write-Host " [UHDC SUCCESS] Deployment command finished."
 
-            # --- AUDIT LOG INJECTION ---
             if (-not [string]::IsNullOrWhiteSpace($SharedRoot)) {
                 $AuditHelper = Join-Path -Path $SharedRoot -ChildPath "Core\Helper_AuditLog.ps1"
                 if (Test-Path $AuditHelper) {
                     & $AuditHelper -Target $Target -Action "Deployed Software: $($installer.Name)" -SharedRoot $SharedRoot
                 }
             }
-            # ---------------------------
-
         } catch {
             Write-Host " [UHDC] [!] ERROR: Execution failed. $($_.Exception.Message)"
         }
     } else {
         Write-Host " [UHDC] [!] ERROR: psexec.exe not found at $psExecPath"
-        Write-Host "        Please ensure the UHDC console has downloaded it to the \Core folder."
     }
 }
 
