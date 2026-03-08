@@ -33,7 +33,7 @@ If you are an individual user who uses the Community tier but wants to say thank
 
 ---
 
-### ⚠️ Liability & Warranty (The Legal Stuff)
+### ⚠️ LIABILITY & WARRANTY (The Legal Stuff)
 While I trust you to respect the licensing, you must trust your own testing before deploying this to your network. 
 * UHDC is provided **"AS IS"**, without warranty of any kind. 
 * By using this software, you assume all risk. I am not liable for any data loss, network breaches, lateral movement, or financial damages resulting from the use, misuse, or misconfiguration of this tool. 
