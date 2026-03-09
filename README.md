@@ -1,135 +1,124 @@
 # Unified Help Desk Console (UHDC)
-**Architected by:** Bobby Burns  
+
 **Version:** 1.0.0  
+**Architecture:** Agentless, Multi-Threaded Orchestration  
+**License:** GNU General Public License v3.0 (See LICENSE.md)
 
-The Unified Help Desk Console (UHDC) is an advanced, multi-threaded, web-driven orchestration platform designed for Enterprise IT Help Desks. It replaces fragmented scripts and portals with a "Single Pane of Glass" HTML dashboard powered by a local PowerShell Micro-API engine.
+## Executive Summary
+The Unified Help Desk Console (UHDC) is an enterprise-grade orchestration platform designed to consolidate Active Directory, Microsoft Intune, and native Windows management protocols into a single pane of glass. It bridges the gap between complex backend infrastructure and Tier 1 help desk usability, drastically reducing Mean Time to Resolution (MTTR) through Live-Call Remediation.
 
----
-
-## ⚠️ CRITICAL LEGAL DISCLAIMER & LIABILITY WAIVER
-**READ CAREFULLY BEFORE DEPLOYING THIS SOFTWARE.**
-
-By downloading, installing, or using the Unified Help Desk Console (UHDC), you acknowledge and agree to the following:
-
-1. **NO WARRANTY:** This software is provided "AS IS", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement.
-2. **ZERO LIABILITY:** In no event shall the author (**Bobby Burns**) or contributors be liable for any claim, damages, financial loss, data loss, network breaches, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.
-3. **MISCONFIGURATION RISK:** This software utilizes powerful administrative tools (including PsExec, WinRM, and WMI) running under the `SYSTEM` context. **Improper configuration of the Telemetry Drop Box architecture (detailed below) can expose your network to lateral movement or ransomware attacks.** You are solely responsible for verifying your NTFS and Share permissions, firewall rules, and Active Directory configurations. 
-4. **USE AT YOUR OWN RISK:** You assume all responsibility for testing this software in a secure development environment prior to production deployment.
+⚠️ **SECURITY WARNING & LIABILITY DISCLAIMER**  
+The UHDC utilizes powerful administrative protocols (WinRM, RPC, PsExec) and operates under the NT AUTHORITY\SYSTEM context during fallback executions. Misconfiguration of the network shares or SQL databases can expose your environment to lateral movement vulnerabilities. **This software is provided "AS IS", without warranty of any kind.** By deploying this software, you assume all risks associated with its use. Please read LICENSE.md for the full liability waiver before proceeding.
 
 ---
 
-## 🚀 Core Architecture
+## 1. Architectural Prerequisites
 
-UHDC is built on a highly resilient, fault-tolerant execution pipeline:
-* **Micro-API Engine:** `AppLogic.ps1` acts as a local web server (Port 5050), routing JSON payloads between the HTML frontend and the PowerShell backend.
-* **WinRM-to-PsExec Fallback:** Every remote tool attempts to execute natively via WinRM for maximum speed. If RPC traffic is blocked by endpoint firewalls, the engine seamlessly encodes the payload into Base64 and forces execution via PsExec under the `SYSTEM` context.
-* **Out-of-Band Data Extraction:** Tools like Event Forensics and Bookmark Backups bypass SMB file-sharing firewalls by encoding files into Base64 strings on the target, transmitting them via standard output streams, and decoding them locally.
+### Network & Firewall Requirements
+To ensure seamless remote remediation, the following ports must be permitted from the Help Desk VLAN to the Endpoint VLAN:
+* **TCP 5985 (HTTP):** Windows Remote Management (WinRM) - Primary Execution Protocol
+* **TCP 445 (SMB):** File Sharing - Required for PsExec fallback and Out-of-Band data extraction
+* **TCP 135 & Dynamic RPC:** Required for legacy WMI queries (if WinRM fails)
+* **UDP 9:** Wake-on-LAN (WoL) - Required for Zero-Touch Mass Deployment
 
-## 🛠️ Capabilities
+### Workstation Dependencies
+Technicians running the console must have the following installed on their local machines:
+* **RSAT: Active Directory Domain Services** (For LDAP queries)
+* **Microsoft Graph API Modules** (For Intune/Entra ID integration)
 
-### 1. Intelligence & Telemetry
-* **Identity & Asset Correlation:** Instantly maps users to their physical devices using AD attributes and historical telemetry.
-* **Global Asset Telemetry:** A Zero-Trust background engine that tracks user IP and device changes in real-time.
-* **Cloud Identity Orchestrator:** A Graph API overlay for Entra ID/Intune to retrieve BitLocker keys, LAPS passwords, and manage MFA without opening a web portal.
-
-### 2. Endpoint Remediation
-* **Zero-Touch Mass Deployment:** PDQ-style parallel software deployment to single or comma-separated lists of computers.
-* **Deep Storage Remediation:** Safely purges MECM caches, Temp folders, and triggers background Disk Cleanup.
-* **Chromium Profile Rebuild:** Backs up bookmarks, kills locked processes, wipes corrupted AppData, and restores bookmarks.
-* **Service & Network Orchestration:** Remotely fixes Print Spoolers, forces GPUpdates, restarts MECM agents, and remediates DNS routing issues.
-
-### 3. Diagnostics & Forensics
-* **Advanced Event Forensics:** Deep-scans remote event logs and returns a styled HTML table while silently saving a full CSV backup.
-* **Hardware Degradation Analysis:** Queries raw WMI classes to calculate exact battery health (mWh) and degradation percentages.
-* **Automated Warranty Routing:** Extracts BIOS serial numbers and dynamically generates links to Dell, Lenovo, HP, or Microsoft warranty portals.
+*Note: You can run Install-UHDCDependencies.ps1 as Administrator to automatically bootstrap these requirements.*
 
 ---
 
-## 🔒 REQUIRED SETUP: Zero-Trust Telemetry Drop Box (Standard Deployment)
+## 2. Standard Deployment Guide (Environments < 20,000 Endpoints)
 
-To track users in real-time without increasing your endpoint attack surface, UHDC uses an Event-Driven Agent (`Deploy-GlobalAssetTelemetry.ps1`). When a user connects to the network, the agent drops a tiny JSON file into a central network share.
+The standard deployment utilizes a "Share-First" architecture. It relies on a highly efficient, flat-file JSON database and an SMB drop-box to track asset telemetry with zero infrastructure overhead.
 
-**If you do not configure these permissions exactly as written, a compromised endpoint could encrypt or delete your master database.**
+### Step 1: Create the Central Repository
+On your secure infrastructure server (e.g., \\CORP-FS01), create the following directory structure and share the root folder as a hidden share (e.g., \\CORP-FS01\UHDC$):
 
-### Step 1: Create the Share
-1. On your server, create a folder named `TelemetryDrop`.
-2. Share it as a hidden share: `TelemetryDrop$`
+    \UHDC_Production
+        \Core
+        \Tools
+        \Logs
+        \Config
+        \TelemetryDrop
 
-### Step 2: Configure Share Permissions
-* Grant `Domain Computers` -> **Change** and **Read**.
+### Step 2: Secure the Zero-Trust Data Diode
+The \TelemetryDrop folder must be configured as a "Write-Only" boundary. Endpoints must be able to drop files in, but cannot read, modify, or delete anything.
+1. Right-click \TelemetryDrop -> Properties -> Security -> Advanced.
+2. Disable inheritance and remove standard Users.
+3. Add Domain Computers.
+4. Click Show advanced permissions.
+5. CHECK ONLY: Create files / write data, Create folders / append data, Write attributes.
+6. EXPLICITLY UNCHECK: Read data, Delete, Delete subfolders and files, Modify.
 
-### Step 3: Configure NTFS (Security) Permissions (CRITICAL)
-This creates a "Write-Only Data Diode." Endpoints can drop files in, but cannot read, modify, or delete anything.
-1. Right-click the folder -> **Properties** -> **Security** -> **Advanced**.
-2. Disable inheritance and remove standard Users/Computers.
-3. Add `Domain Computers`.
-4. Click **Show advanced permissions**.
-5. **CHECK ONLY THE FOLLOWING:**
-   * `Create files / write data`
-   * `Create folders / append data`
-   * `Write attributes`
-6. **ENSURE THESE ARE UNCHECKED:**
-   * `Read data`
-   * `Delete`
-   * `Delete subfolders and files`
-   * `Modify`
+### Step 3: Deploy the Telemetry Agent
+1. Open Deploy-GlobalAssetTelemetry.ps1.
+2. Modify the $DropShare variable to point to your new drop box (e.g., \\CORP-FS01\UHDC$\TelemetryDrop).
+3. Deploy this script to your Windows 10/11 endpoints via Microsoft Intune or MECM (SCCM). It registers an Event-Driven Scheduled Task (Event ID 10000) that runs silently as SYSTEM.
 
-### Step 4: Deploy the Agent
-Deploy `Deploy-GlobalAssetTelemetry.ps1` to your endpoints via Intune, MECM, or GPO. Ensure you edit the `$DropShare` variable inside the script to point to your new `\\Server\TelemetryDrop$` share.
-
----
-
-## 🏢 Enterprise SQL Architecture (20,000+ Endpoints)
-
-The standard JSON flat-file database and SMB Drop Box architecture is highly efficient for small-to-medium enterprises. However, in massive environments exceeding 20,000 endpoints, the volume of concurrent network events (e.g., the "8:00 AM Logon Storm") can bottleneck standard SMB file shares.
-
-If you are deploying UHDC in a massive, multi-domain forest, **do not use the standard JSON setup.** Instead, navigate to the **`20KPLUS`** directory included in this repository. It contains a **Direct-to-SQL telemetry pipeline** that replaces the JSON architecture. 
-* **Infinite Concurrency:** Endpoints execute lightweight SQL commands directly against the database.
-* **Integrated Security:** Utilizes Active Directory Computer Accounts (`DOMAIN\PC$`) to authenticate to the SQL server, eliminating hardcoded credentials.
-* **Microsecond Lookups:** The UI queries the SQL database directly, returning asset locations instantly regardless of fleet size.
-
-Please read the `Enterprise_Deployment_Guide.md` located inside the `20KPLUS` folder for strict SQL schema and firewall hardening instructions.
+### Step 4: Console Initialization
+1. Have a technician map to the \\CORP-FS01\UHDC$ share and run Launch-UHDC.cmd.
+2. On the first run, the console will generate a config.json file in the \Config directory.
+3. Open \Config\config.json and configure your TenantDomain (e.g., acmecorp.com) to enforce cross-tenant security boundaries.
+4. Restart the console.
 
 ---
 
-## 💻 How to Launch
+## 3. Enterprise Deployment Guide (20K+ Endpoints / SQL Architecture)
 
-1. Clone or download this repository to your local machine.
-2. Ensure you have local Administrator privileges.
-3. Double-click **`Launch-UHDC.cmd`**.
-   * *This script will automatically request UAC elevation, bypass local execution policies, start the API engine, and launch the dashboard in Microsoft Edge App Mode.*
-4. On first run, a `config.json` file will be generated in the `\Config` folder. Open it, enter your Tenant Domain, and restart the console.
+For global, multi-domain forests exceeding 20,000 endpoints, standard SMB file shares will bottleneck during morning logon storms. The UHDC seamlessly pivots to a Direct-to-SQL telemetry pipeline to eliminate file-lock contention.
+
+### Step 1: Database Preparation
+On your Microsoft SQL Server, create a new database named UHDCTelemetry. Execute the following query to build the schema:
+
+    CREATE TABLE AssetTelemetry (
+        Username VARCHAR(100),
+        ComputerName VARCHAR(100),
+        IPAddress VARCHAR(50),
+        MACAddress VARCHAR(50),
+        LastSeen DATETIME,
+        PRIMARY KEY (Username, ComputerName)
+    );
+    CREATE INDEX IX_Username ON AssetTelemetry(Username);
+    CREATE INDEX IX_ComputerName ON AssetTelemetry(ComputerName);
+
+### Step 2: Create the Stored Procedure (Least Privilege)
+To prevent a compromised endpoint from dropping your SQL table, create this Stored Procedure to handle the upsert logic:
+
+    CREATE PROCEDURE dbo.UpsertAssetTelemetry
+        @Username VARCHAR(100), @ComputerName VARCHAR(100), @IPAddress VARCHAR(50), @MACAddress VARCHAR(50), @LastSeen DATETIME
+    AS
+    BEGIN
+        SET NOCOUNT ON;
+        MERGE INTO AssetTelemetry AS target
+        USING (SELECT @Username AS Username, @ComputerName AS ComputerName) AS source
+        ON target.Username = source.Username AND target.ComputerName = source.ComputerName
+        WHEN MATCHED THEN UPDATE SET IPAddress = @IPAddress, MACAddress = @MACAddress, LastSeen = @LastSeen
+        WHEN NOT MATCHED THEN INSERT (Username, ComputerName, IPAddress, MACAddress, LastSeen) VALUES (@Username, @ComputerName, @IPAddress, @MACAddress, @LastSeen);
+    END
+
+*Grant the Domain Computers AD group EXECUTE permissions on this Stored Procedure. Do not grant them direct table access.*
+
+### Step 3: Upgrade the UHDC Core
+1. Open your central \Config\config.json file and add your SQL connection string:
+   "Database": { "ConnectionString": "Server=tcp:YOUR-SQL-SERVER,1433;Initial Catalog=UHDCTelemetry;Integrated Security=True;Encrypt=True;TrustServerCertificate=True;" }
+2. Navigate to your central \Core directory.
+3. Delete the existing IdentityAssetCorrelation.ps1 (the JSON version).
+4. Copy the new IdentityAssetCorrelation.ps1 from the 20KPLUS folder into the \Core directory.
+5. You may now safely delete the \TelemetryDrop folder and the GlobalAssetTelemetry.ps1 background aggregator, as they are no longer needed.
+
+### Step 4: Deploy the SQL Endpoint Agent
+1. Open Deploy-GlobalAssetTelemetry-SQL.ps1 from the 20KPLUS folder.
+2. Update the $SqlConnectionString variable inside the payload to match your SQL Server.
+3. Deploy this script to your fleet via Intune or MECM. The endpoints will now authenticate directly to SQL using their Active Directory Computer Accounts (DOMAIN\PC$).
+
 ---
 
-## 💳 Pricing & Licensing
+## 4. Security & Governance
 
-UHDC is available in three tiers to accommodate organizations of any size, from small teams to global enterprises.
-
-### COMMUNITY
-**$0**
-*Free forever for up to 3 Technicians.*
-* Up to 1,000 Managed Endpoints
-* Full Active Directory Integration
-* Microsoft Graph API / Intune Modules
-* Interactive Training Engine
-* Zero Hidden Telemetry
-
-### PROFESSIONAL
-**$499 /tech/yr**
-*For growing IT departments and MSPs.*
-* **Everything in Community, plus:**
-* Unlimited Managed Endpoints
-* Commercial Use Certificate
-* Priority Email Support
-* Funds continued core development
-
-### CUSTOM
-**Let's Talk**
-*For massive, multi-domain global enterprises.*
-* **Everything in Professional, plus:**
-* Optimized for multi-domain forests
-* Distributed scanning nodes
-* Dedicated Account Manager
-* Custom deployment consultation
-
-*Engineered for Enterprise IT. Built by Bobby Burns.*
+The UHDC operates on a Zero-Trust architectural philosophy:
+* **Identity-First RBAC:** The console utilizes Pass-Through Authentication via the Connect-MgGraph module. It operates strictly on Delegated Permissions and cannot grant technicians any access they do not natively possess in Entra ID.
+* **Immutable Audit Trails:** Every execution is piped into a centralized, timestamped CSV database (or Windows Event Log in the 20K+ architecture) via SMB/RPC. It programmatically stamps the technician’s identity and the target hardware ID for forensic review.
+* **No Hidden Telemetry:** All organizational execution data, asset maps, and audit logs remain exclusively within your tenant’s controlled environment. The software does not "phone home."
