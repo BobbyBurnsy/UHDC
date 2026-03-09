@@ -12,7 +12,7 @@ We operate on an honor system. The Community Edition is intended for environment
 * Fewer than 1,000 managed endpoints.
 * 3 or fewer active Help Desk technicians.
 
-Under this license, you are free to use, modify, and distribute the software, provided that any derivative works are also open-sourced under the GPLv3. 
+Attribution Requirement: If you borrow, fork, or adapt any scripts, XAML layouts, or underlying code from this project for your own tools, you must provide explicit credit to Bobby Burns and a link to www.github.com/bobbyburnsy/UHDC in your documentation and source code.
 
 *(See the bottom of this document for the full GNU GPLv3 text).*
 
