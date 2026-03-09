@@ -92,6 +92,15 @@ Please read the `Enterprise_Deployment_Guide.md` located inside the `20KPLUS` fo
 
 ---
 
+## 💻 How to Launch
+
+1. Clone or download this repository to your local machine.
+2. Ensure you have local Administrator privileges.
+3. Double-click **`Launch-UHDC.cmd`**.
+   * *This script will automatically request UAC elevation, bypass local execution policies, start the API engine, and launch the dashboard in Microsoft Edge App Mode.*
+4. On first run, a `config.json` file will be generated in the `\Config` folder. Open it, enter your Tenant Domain, and restart the console.
+---
+
 ## 💳 Pricing & Licensing
 
 UHDC is available in three tiers to accommodate organizations of any size, from small teams to global enterprises.
@@ -123,15 +132,4 @@ UHDC is available in three tiers to accommodate organizations of any size, from 
 * Dedicated Account Manager
 * Custom deployment consultation
 
----
-
-## 💻 How to Launch
-
-1. Clone or download this repository to your local machine.
-2. Ensure you have local Administrator privileges.
-3. Double-click **`Launch-UHDC.cmd`**.
-   * *This script will automatically request UAC elevation, bypass local execution policies, start the API engine, and launch the dashboard in Microsoft Edge App Mode.*
-4. On first run, a `config.json` file will be generated in the `\Config` folder. Open it, enter your Tenant Domain, and restart the console.
-
----
 *Engineered for Enterprise IT. Built by Bobby Burns.*
