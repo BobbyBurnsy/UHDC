@@ -30,7 +30,7 @@ Technicians running the console must have the following installed on their local
 
 ---
 
-## 2. Standard Deployment Guide (Environments < 20,000 Endpoints)
+## 2. Standard Deployment Guide (Environments < 10,000 Endpoints)
 
 The standard deployment utilizes a "Share-First" architecture. It relies on a highly efficient, flat-file JSON database and an SMB drop-box to track asset telemetry with zero infrastructure overhead.
 
@@ -66,7 +66,7 @@ The \TelemetryDrop folder must be configured as a "Write-Only" boundary. Endpoin
 
 ---
 
-## 3. Enterprise Deployment Guide (20K+ Endpoints / SQL Architecture)
+## 3. Enterprise Deployment Guide (10K+ Endpoints / SQL Architecture)
 
 For global, multi-domain forests exceeding 20,000 endpoints, standard SMB file shares will bottleneck during morning logon storms. The UHDC seamlessly pivots to a Direct-to-SQL telemetry pipeline to eliminate file-lock contention.
 
@@ -122,3 +122,4 @@ The UHDC operates on a Zero-Trust architectural philosophy:
 * **Identity-First RBAC:** The console utilizes Pass-Through Authentication via the Connect-MgGraph module. It operates strictly on Delegated Permissions and cannot grant technicians any access they do not natively possess in Entra ID.
 * **Immutable Audit Trails:** Every execution is piped into a centralized, timestamped CSV database (or Windows Event Log in the 20K+ architecture) via SMB/RPC. It programmatically stamps the technician’s identity and the target hardware ID for forensic review.
 * **No Hidden Telemetry:** All organizational execution data, asset maps, and audit logs remain exclusively within your tenant’s controlled environment. The software does not "phone home."
+
