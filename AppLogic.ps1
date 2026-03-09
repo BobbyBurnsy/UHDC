@@ -71,13 +71,27 @@ if (-not (Test-Path $psExecPath)) {
 }
 
 # ------------------------------------------------------------------
-# 4. START WEB SERVER
+# 4. START WEB SERVER & ORPHAN CLEANUP
 # ------------------------------------------------------------------
 $Port = 5050
 $Url = "http://localhost:$Port/"
 $HttpListener = New-Object System.Net.HttpListener
 $HttpListener.Prefixes.Add($Url)
-$HttpListener.Start()
+
+try {
+    $HttpListener.Start()
+} catch {
+    Write-Host "[!] Port $Port is in use. Cleaning up orphaned UHDC processes..." -ForegroundColor Yellow
+    $currentPID = $PID
+
+    # Hunt down any other powershell.exe instances specifically running AppLogic.ps1
+    Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" | 
+        Where-Object { $_.CommandLine -match "AppLogic.ps1" -and $_.ProcessId -ne $currentPID } | 
+        ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+
+    Start-Sleep -Seconds 2
+    $HttpListener.Start()
+}
 
 Write-Host "[UHDC] Micro-API Engine Started on Port $Port" -ForegroundColor Cyan
 
@@ -358,6 +372,16 @@ try {
             $Response.ContentType = "application/json"
             $Response.OutputStream.Write($Buffer, 0, $Buffer.Length)
         }
+		
+		        # --- GRACEFUL SHUTDOWN ROUTE ---
+        elseif ($Request.Url.AbsolutePath -eq "/api/system/shutdown" -and $Request.HttpMethod -eq "POST") {
+            Write-Host ">>> Shutdown signal received from UI. Terminating engine..." -ForegroundColor Yellow
+            $Response.StatusCode = 200
+            $Response.Close()
+            $HttpListener.Stop()
+            break # Breaks the infinite while loop, allowing the script to exit cleanly
+        }
+		
         else { $Response.StatusCode = 404 }
 
         $Response.Close()
