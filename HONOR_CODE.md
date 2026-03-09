@@ -29,7 +29,7 @@ If this tool saves your enterprise IT department hours of work, reduces your hel
 ---
 
 ### ☕ Support the Developer
-If you are an individual user who uses the Community tier but wants to say thank you, you can drop a one-time tip via [GitHub Sponsors] to buy me a coffee. Your support is always appreciated!
+If you are an individual user who uses the Community tier but wants to say thank you, you can drop a one-time tip via https://github.com/sponsors/BobbyBurnsy to buy me a coffee. Your support is always appreciated!
 
 ---
 
