@@ -122,4 +122,3 @@ The UHDC operates on a Zero-Trust architectural philosophy:
 * **Identity-First RBAC:** The console utilizes Pass-Through Authentication via the Connect-MgGraph module. It operates strictly on Delegated Permissions and cannot grant technicians any access they do not natively possess in Entra ID.
 * **Immutable Audit Trails:** Every execution is piped into a centralized, timestamped CSV database (or Windows Event Log in the 20K+ architecture) via SMB/RPC. It programmatically stamps the technician’s identity and the target hardware ID for forensic review.
 * **No Hidden Telemetry:** All organizational execution data, asset maps, and audit logs remain exclusively within your tenant’s controlled environment. The software does not "phone home."
-
