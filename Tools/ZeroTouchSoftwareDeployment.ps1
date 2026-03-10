@@ -3,12 +3,8 @@
     UHDC Web-Ready Tool: ZeroTouchSoftwareDeployment.ps1
 .DESCRIPTION
     Acts as a backend controller for the Zero-Touch Deployment Library UI.
-    Modes:
-    - GetLibrary: Returns the SoftwareLibrary.json contents to the web UI.
-    - AddApp / DeleteApp: Modifies the central JSON library.
-    - Install: Utilizes WinRM (or PsExec fallback) to silently push payloads.
-               Now supports MASS DEPLOYMENT via comma-separated target lists.
-               Now includes WAKE-ON-LAN (WoL) for offline targets.
+    Supports single and mass deployments via WinRM and PsExec.
+    Includes Wake-on-LAN (WoL) functionality for offline targets.
 #>
 
 param(
@@ -21,7 +17,6 @@ param(
     [Parameter(Mandatory=$false)]
     [string]$SharedRoot,
 
-    # --- EXTRA ARGS FROM WEB UI ---
     [Parameter(Mandatory=$false)]
     [string]$Action = "Install",
 
@@ -43,20 +38,14 @@ param(
 
 $ErrorActionPreference = "Continue"
 
-# ====================================================================
-# WAKE-ON-LAN FUNCTION
-# ====================================================================
+# --- Wake-on-LAN Helper ---
 function Send-MagicPacket {
     param([string]$MacAddress)
     try {
-        # Strip out colons or dashes
         $cleanMac = $MacAddress -replace '[:-]',''
-        # Convert to byte array
         $macByteArray = [byte[]]($cleanMac -split '(.{2})' -ne '' | ForEach-Object { [convert]::ToByte($_, 16) })
-        # Construct Magic Packet: 6 bytes of FF, followed by 16 repetitions of the MAC
         $magicPacket = [byte[]](,0xFF * 6) + ($macByteArray * 16)
 
-        # Broadcast UDP on Port 9
         $udpClient = New-Object System.Net.Sockets.UdpClient
         $udpClient.Connect([System.Net.IPAddress]::Broadcast, 9)
         $udpClient.Send($magicPacket, $magicPacket.Length) | Out-Null
@@ -65,23 +54,19 @@ function Send-MagicPacket {
     } catch { return $false }
 }
 
-# ====================================================================
-# TRAINING DATA EXPORT (For Web UI Modal)
-# ====================================================================
+# --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
         StepName = "ZERO-TOUCH SOFTWARE DEPLOYMENT"
-        Description = "We establish a remote WinRM session to execute the installer directly from the network share using 'silent' command-line switches (like /S or /qn). This bypasses UAC prompts and hides the installation wizard. If multiple targets are provided, we use PowerShell's native parallel remoting to dispatch the command to all machines simultaneously. If the local firewall blocks WinRM, we automatically fall back to PsExec, passing a Base64-encoded PowerShell payload to safely execute the deployment as the SYSTEM account."
+        Description = "We establish a remote WinRM session to execute the installer directly from the network share using silent command-line switches. If multiple targets are provided, we use PowerShell's native parallel remoting to dispatch the command to all machines simultaneously. If the local firewall blocks WinRM, we automatically fall back to PsExec."
         Code = "Invoke-Command -ComputerName `$TargetArray -ScriptBlock `$Payload -AsJob"
-        InPerson = "Walking desk to desk with a flash drive, or using an enterprise tool like PDQ Deploy or MECM to push the package."
+        InPerson = "Walking desk to desk with a flash drive, or using an enterprise tool like MECM to push the package."
     }
     $data | ConvertTo-Json | Write-Output
     return
 }
 
-# ====================================================================
-# LIBRARY MANAGEMENT FUNCTIONS
-# ====================================================================
+# --- Library Management ---
 $LibraryFile = Join-Path -Path $SharedRoot -ChildPath "Core\SoftwareLibrary.json"
 $HistoryFile = Join-Path -Path $SharedRoot -ChildPath "Core\UserHistory.json"
 
@@ -106,9 +91,6 @@ function Save-Lib {
     $d | ConvertTo-Json -Depth 2 | Set-Content $LibraryFile -Force
 }
 
-# ====================================================================
-# MODE ROUTING: UI LIBRARY MANAGEMENT
-# ====================================================================
 if ($Action -eq "GetLibrary") {
     $lib = Load-Lib
     $lib | ConvertTo-Json -Depth 2 | Write-Output
@@ -132,9 +114,7 @@ if ($Action -eq "DeleteApp") {
     return
 }
 
-# ====================================================================
-# CORE EXECUTION: INSTALL MODE (SINGLE & MASS DEPLOY)
-# ====================================================================
+# --- Main Execution ---
 if ($Action -eq "Install") {
 
     if ([string]::IsNullOrWhiteSpace($Target)) { 
@@ -142,29 +122,21 @@ if ($Action -eq "Install") {
         return 
     }
 
-    # [CRITICAL FIX] Sanitize AppName for HTML output to prevent XSS
     $SafeAppName = $AppName -replace '<', '&lt;' -replace '>', '&gt;'
-
-    # Parse targets into an array
     $TargetArray = @($Target -split ',' | ForEach-Object { $_.Trim() } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 
-    # Define the core payload to execute the installer silently
     $PayloadString = @"
         `$ErrorActionPreference = 'SilentlyContinue'
         `$proc = Start-Process -FilePath `"$AppPath`" -ArgumentList `"$AppArgs`" -Wait -WindowStyle Hidden -PassThru
         if (`$proc) { Write-Output `"EXIT_CODE:`$(`$proc.ExitCode)`" }
 "@
 
-    # Encode the payload to Base64 to prevent nested quote parsing errors
     $Bytes = [System.Text.Encoding]::Unicode.GetBytes($PayloadString)
     $EncodedCommand = [Convert]::ToBase64String($Bytes)
     $wmiPayload = "powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $EncodedCommand"
-
     $psExecPath = Join-Path -Path $SharedRoot -ChildPath "Core\psexec.exe"
 
-    # ----------------------------------------------------------------
-    # SCENARIO A: SINGLE TARGET DEPLOYMENT
-    # ----------------------------------------------------------------
+    # --- Single Target Deployment ---
     if ($TargetArray.Count -eq 1) {
         $SingleTarget = $TargetArray[0]
         Write-Output "========================================"
@@ -172,7 +144,6 @@ if ($Action -eq "Install") {
         Write-Output "========================================"
         Write-Output "[i] Deploying $SafeAppName to $SingleTarget..."
 
-        # --- SINGLE TARGET WAKE-ON-LAN LOGIC ---
         if (-not (Test-Connection -ComputerName $SingleTarget -Count 1 -Quiet)) { 
             Write-Output "[!] $SingleTarget is offline. Attempting Wake-on-LAN..."
             $Woken = $false
@@ -231,21 +202,14 @@ if ($Action -eq "Install") {
         return
     }
 
-    # ----------------------------------------------------------------
-    # SCENARIO B: MASS DEPLOYMENT (PDQ STYLE)
-    # ----------------------------------------------------------------
+    # --- Mass Deployment ---
     Write-Output "========================================"
     Write-Output "[UHDC] MASS ZERO-TOUCH DEPLOYMENT"
     Write-Output "========================================"
     Write-Output "[i] Application: $SafeAppName"
     Write-Output "[i] Total Targets: $($TargetArray.Count)"
 
-    $Online = @()
-    $Offline = @()
-    $Woken = @()
-    $SuccessWinRM = @()
-    $SuccessPsExec = @()
-    $Failed = @()
+    $Online = @(); $Offline = @(); $Woken = @(); $SuccessWinRM = @(); $SuccessPsExec = @(); $Failed = @()
 
     Write-Output "`n[1/4] Performing rapid ping sweep..."
     foreach ($t in $TargetArray) {
@@ -253,7 +217,6 @@ if ($Action -eq "Install") {
     }
     Write-Output " > Online: $($Online.Count) | Offline: $($Offline.Count)"
 
-    # --- MASS DEPLOYMENT WAKE-ON-LAN LOGIC ---
     if ($Offline.Count -gt 0 -and (Test-Path $HistoryFile)) {
         Write-Output "`n[2/4] Attempting Wake-on-LAN for offline targets..."
         try {
@@ -300,7 +263,6 @@ if ($Action -eq "Install") {
     if ($Online.Count -gt 0) {
         Write-Output "`n[3/4] Dispatching parallel WinRM commands..."
 
-        # Invoke-Command natively runs in parallel against an array of computers
         $WinRMJob = Invoke-Command -ComputerName $Online -ScriptBlock {
             param($cmd)
             Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = $cmd } | Out-Null
@@ -308,9 +270,8 @@ if ($Action -eq "Install") {
 
         Wait-Job $WinRMJob | Out-Null
         $JobResults = Receive-Job $WinRMJob
-        Remove-Job $WinRMJob -Force # <--- MEMORY LEAK FIXED HERE
+        Remove-Job $WinRMJob -Force
 
-        # Determine successes and failures
         $FailedWinRM = @()
         foreach ($err in $WinRMErrors) {
             if ($err.TargetObject) { $FailedWinRM += $err.TargetObject.ToString().ToUpper() }
@@ -340,7 +301,6 @@ if ($Action -eq "Install") {
         }
     }
 
-    # Generate HTML Summary Report
     $TotalSuccess = $SuccessWinRM.Count + $SuccessPsExec.Count
     $html = "<div style='background: #1e293b; padding: 16px; border-radius: 8px; border-left: 4px solid #9b59b6; margin-top: 15px; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); font-family: system-ui, sans-serif;'>"
     $html += "<div style='color: #f8fafc; font-weight: bold; font-size: 1.1rem; margin-bottom: 12px;'><i class='fa-solid fa-network-wired'></i> Mass Deployment Report</div>"
@@ -350,20 +310,13 @@ if ($Action -eq "Install") {
     $html += "<div style='background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;'><span style='color: #94a3b8; font-size: 0.85rem;'>Successful Dispatches</span><br><span style='color: #2ecc71; font-size: 1.2rem; font-weight: bold;'>$TotalSuccess</span></div>"
     $html += "</div>"
 
-    if ($Woken.Count -gt 0) {
-        $html += "<div style='color: #3498db; font-size: 0.85rem; margin-top: 8px;'><i class='fa-solid fa-power-off'></i> <strong>$($Woken.Count) Woken via WoL:</strong> $($Woken -join ', ')</div>"
-    }
-    if ($Offline.Count -gt 0) {
-        $html += "<div style='color: #e74c3c; font-size: 0.85rem; margin-top: 8px;'><i class='fa-solid fa-triangle-exclamation'></i> <strong>$($Offline.Count) Offline:</strong> $($Offline -join ', ')</div>"
-    }
-    if ($Failed.Count -gt 0) {
-        $html += "<div style='color: #f1c40f; font-size: 0.85rem; margin-top: 8px;'><i class='fa-solid fa-circle-xmark'></i> <strong>$($Failed.Count) Failed:</strong> $($Failed -join ', ')</div>"
-    }
+    if ($Woken.Count -gt 0) { $html += "<div style='color: #3498db; font-size: 0.85rem; margin-top: 8px;'><i class='fa-solid fa-power-off'></i> <strong>$($Woken.Count) Woken via WoL:</strong> $($Woken -join ', ')</div>" }
+    if ($Offline.Count -gt 0) { $html += "<div style='color: #e74c3c; font-size: 0.85rem; margin-top: 8px;'><i class='fa-solid fa-triangle-exclamation'></i> <strong>$($Offline.Count) Offline:</strong> $($Offline -join ', ')</div>" }
+    if ($Failed.Count -gt 0) { $html += "<div style='color: #f1c40f; font-size: 0.85rem; margin-top: 8px;'><i class='fa-solid fa-circle-xmark'></i> <strong>$($Failed.Count) Failed:</strong> $($Failed -join ', ')</div>" }
 
     $html += "</div>"
     Write-Output $html
 
-    # --- AUDIT LOG INJECTION ---
     if (-not [string]::IsNullOrWhiteSpace($SharedRoot)) {
         $AuditHelper = Join-Path -Path $SharedRoot -ChildPath "Core\Helper_AuditLog.ps1"
         if (Test-Path $AuditHelper) {
