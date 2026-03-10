@@ -59,7 +59,7 @@ while ($RetryCount -lt $MaxRetries) {
         Start-Sleep -Milliseconds (Get-Random -Minimum 100 -Maximum 500)
     }
 }
-
 if (-not $Success) {
     Write-Output "[!] Failed to write to audit log after $MaxRetries attempts. File may be locked."
 }
+
