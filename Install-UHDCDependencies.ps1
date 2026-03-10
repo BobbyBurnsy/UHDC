@@ -16,27 +16,21 @@ Write-Host "=======================================================" -Foreground
 Write-Host " [UHDC] WORKSTATION DEPENDENCY BOOTSTRAPPER" -ForegroundColor Cyan
 Write-Host "=======================================================" -ForegroundColor Cyan
 
-# ------------------------------------------------------------------
-# 1. ELEVATION CHECK
-# ------------------------------------------------------------------
+# --- Elevation Check ---
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
-    Write-Host "[!] CRITICAL ERROR: This script must be run as Administrator." -ForegroundColor Red
+    Write-Host "[!] ERROR: This script must be run as Administrator." -ForegroundColor Red
     Write-Host "    Please right-click PowerShell and select 'Run as Administrator'." -ForegroundColor Yellow
     Pause
     exit
 }
 
-# ------------------------------------------------------------------
-# 2. ENVIRONMENT PREPARATION
-# ------------------------------------------------------------------
+# --- Environment Preparation ---
 Write-Host "`n[1/4] Configuring Local Environment..." -ForegroundColor White
 
-# Enforce TLS 1.2 (Required for PSGallery and Graph API)
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 Write-Host " > [OK] TLS 1.2 Enforced." -ForegroundColor Green
 
-# Set Execution Policy to RemoteSigned to allow local script execution
 $currentPolicy = Get-ExecutionPolicy
 if ($currentPolicy -eq "Restricted") {
     Set-ExecutionPolicy RemoteSigned -Scope LocalMachine -Force
@@ -45,20 +39,16 @@ if ($currentPolicy -eq "Restricted") {
     Write-Host " > [OK] Execution Policy is already sufficient ($currentPolicy)." -ForegroundColor Green
 }
 
-# ------------------------------------------------------------------
-# 3. PACKAGE MANAGER BOOTSTRAP
-# ------------------------------------------------------------------
+# --- Package Manager Bootstrap ---
 Write-Host "`n[2/4] Bootstrapping Package Providers..." -ForegroundColor White
 
 try {
-    # Ensure NuGet is installed and available
     if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
         Write-Host " > Installing NuGet Provider..." -ForegroundColor DarkGray
         Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force | Out-Null
     }
     Write-Host " > [OK] NuGet Provider ready." -ForegroundColor Green
 
-    # Trust the PSGallery to prevent installation prompts
     $PSGallery = Get-PSRepository -Name "PSGallery" -ErrorAction SilentlyContinue
     if ($PSGallery.InstallationPolicy -ne "Trusted") {
         Write-Host " > Trusting PSGallery..." -ForegroundColor DarkGray
@@ -70,13 +60,9 @@ try {
     exit
 }
 
-# ------------------------------------------------------------------
-# 4. MICROSOFT GRAPH MODULE INSTALLATION
-# ------------------------------------------------------------------
+# --- Microsoft Graph Module Installation ---
 Write-Host "`n[3/4] Verifying Microsoft Graph API Modules..." -ForegroundColor White
 
-# We only install the specific sub-modules we need to keep the footprint small,
-# rather than installing the massive monolithic 'Microsoft.Graph' module.
 $RequiredModules = @(
     "Microsoft.Graph.Authentication",
     "Microsoft.Graph.Identity.SignIns",
@@ -98,9 +84,7 @@ foreach ($Module in $RequiredModules) {
     }
 }
 
-# ------------------------------------------------------------------
-# 5. ACTIVE DIRECTORY RSAT VERIFICATION
-# ------------------------------------------------------------------
+# --- Active Directory RSAT Verification ---
 Write-Host "`n[4/4] Verifying Active Directory RSAT Tools..." -ForegroundColor White
 
 if (Get-Module -ListAvailable -Name ActiveDirectory) {
@@ -111,9 +95,6 @@ if (Get-Module -ListAvailable -Name ActiveDirectory) {
     Write-Host "       To install, go to: Settings > Apps > Optional Features > Add a feature." -ForegroundColor Yellow
 }
 
-# ------------------------------------------------------------------
-# FINISH
-# ------------------------------------------------------------------
 Write-Host "`n=======================================================" -ForegroundColor Cyan
 Write-Host " [UHDC] BOOTSTRAP COMPLETE" -ForegroundColor Cyan
 Write-Host "=======================================================" -ForegroundColor Cyan
