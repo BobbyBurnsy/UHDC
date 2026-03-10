@@ -3,9 +3,8 @@
     UHDC Web-Ready Core: IdentityAssetCorrelation.ps1
 .DESCRIPTION
     The core intelligence engine for the AD User Intelligence panel.
-    It queries Active Directory for account details, parses high-priority AD groups,
+    Queries Active Directory for account details, parses AD groups,
     and cross-references the central UserHistory.json database.
-    Outputs raw JSON for the Web UI KPI cards, or styled HTML for the telemetry stream.
 #>
 
 param(
@@ -24,13 +23,11 @@ param(
 
 $ErrorActionPreference = "Continue"
 
-# ====================================================================
-# TRAINING DATA EXPORT (For Web UI Modal)
-# ====================================================================
+# --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
         StepName = "IDENTITY & ASSET CORRELATION"
-        Description = "We execute a dual-pronged intelligence query. First, we parse the central UserHistory.json database to instantly map the user to their physical hardware. Second, we query Active Directory for their profile, check their lockout status, dynamically calculate their exact password expiration date, and filter their AD groups to highlight critical access (like VPN or M365)."
+        Description = "We execute a dual-pronged intelligence query. First, we parse the central UserHistory database to map the user to their hardware. Second, we query Active Directory for their profile, check their lockout status, calculate their password expiration date, and filter their AD groups."
         Code = "`$history = `$raw | Where-Object { `$_.User -eq `$TargetUser }`n`$adObj = Get-ADUser -Identity `$TargetUser -Properties LockedOut, PasswordLastSet, MemberOf`n`$policy = Get-ADDefaultDomainPasswordPolicy`n`$expDate = `$adObj.PasswordLastSet.AddDays(`$policy.MaxPasswordAge.Days)"
         InPerson = "Asking the user for their computer name, opening ADUC to check if their account is locked, checking their 'Member Of' tab, and manually calculating 90 days from their last password reset."
     }
@@ -38,10 +35,8 @@ if ($GetTrainingData) {
     return
 }
 
-# ====================================================================
-# BULLETPROOF CONFIG LOADER
-# ====================================================================
-$ImportantGroups = @("VPN", "Admin", "M365", "License", "Remote") # Fallback defaults
+# --- Load Configuration ---
+$ImportantGroups = @("VPN", "Admin", "M365", "License", "Remote")
 
 if ([string]::IsNullOrWhiteSpace($SharedRoot)) {
     try {
@@ -57,7 +52,6 @@ if ([string]::IsNullOrWhiteSpace($SharedRoot)) {
         } else { return }
     } catch { return }
 } else {
-    # If SharedRoot was passed, try to load config from there
     $ConfigFile = Join-Path -Path $SharedRoot -ChildPath "Config\config.json"
     if (Test-Path $ConfigFile) {
         $Config = Get-Content $ConfigFile -Raw | ConvertFrom-Json
@@ -71,9 +65,7 @@ if ([string]::IsNullOrWhiteSpace($TargetUser)) { return }
 
 $HistoryFile = Join-Path -Path $SharedRoot -ChildPath "Core\UserHistory.json"
 
-# ====================================================================
-# PHASE 1: GENERATE THE HISTORY REPORT (Dual-Search)
-# ====================================================================
+# --- Query Telemetry History ---
 $userHistory = @()
 $computerHistory = @()
 $dbStatus = "OK"
@@ -110,24 +102,18 @@ if (Test-Path $HistoryFile) {
     }
 } else { $dbStatus = "NO FILE" }
 
-# ====================================================================
-# PHASE 2: ACTIVE DIRECTORY QUERY
-# ====================================================================
+# --- Query Active Directory ---
 $adObj = $null
-
 try {
     $adObj = Get-ADUser -Identity $TargetUser -Properties Office, Title, Department, EmailAddress, PasswordLastSet, LastLogonDate, LockedOut, Enabled, MemberOf, PasswordNeverExpires -ErrorAction Stop
 } catch {}
 
-# ====================================================================
-# PHASE 3: CALCULATIONS & GROUP PARSING
-# ====================================================================
+# --- Process Data ---
 $expiryDate = "N/A"; $daysLeftStr = "N/A"
 $matchedGroups = @()
 $standardGroupCount = 0
 
 if ($adObj) {
-    # Password Expiry Calculation
     if ($adObj.PasswordNeverExpires) {
         $expiryDate = "Never (Exempt)"; $daysLeftStr = "Infinite"
     } else {
@@ -147,10 +133,8 @@ if ($adObj) {
         } catch { $expiryDate = "Unknown" }
     }
 
-    # AD Group Parsing
     if ($adObj.MemberOf) {
         foreach ($dn in $adObj.MemberOf) {
-            # Extract CN from DN (e.g., CN=VPN_Users,OU=Groups,DC=domain,DC=com -> VPN_Users)
             $cn = if ($dn -match "^CN=([^,]+)") { $matches[1] } else { $dn }
 
             $isImportant = $false
@@ -161,16 +145,12 @@ if ($adObj) {
                 }
             }
 
-            if ($isImportant) {
-                $matchedGroups += $cn
-            } else {
-                $standardGroupCount++
-            }
+            if ($isImportant) { $matchedGroups += $cn } else { $standardGroupCount++ }
         }
     }
 }
 
-# --- JSON API RESPONSE (Used by the Web UI KPI Cards) ---
+# --- JSON Output (Web UI) ---
 if ($AsJson) {
     $res = @{ Status = "error"; Message = "No matching user or computer found."; Type = "none" }
 
@@ -185,8 +165,6 @@ if ($AsJson) {
         $res.DaysUntilExpiry = $daysLeftStr
         $res.TargetPC = if ($userHistory.Count -gt 0) { $userHistory[0].Computer } else { "" }
         $res.KnownPCs = @($userHistory.Computer)
-
-        # [NEW] Inject Email and AD Groups into the JSON payload
         $res.Email = $adObj.EmailAddress
         $res.ImportantGroups = $matchedGroups
 
@@ -200,7 +178,7 @@ if ($AsJson) {
     return
 }
 
-# --- HTML TELEMETRY OUTPUT (Fallback if run without -AsJson) ---
+# --- HTML Output (Fallback) ---
 if ($adObj) {
     $statusColor = if ($adObj.Enabled) { "#2ecc71" } else { "#7f8c8d" }
     $statusText  = if ($adObj.Enabled) { "Active" } else { "DISABLED" }
@@ -227,7 +205,6 @@ if ($adObj) {
     $html += "<div style='color: $expColor; font-weight: bold; font-size: 0.95rem;'>Expiry: $daysLeftStr</div>"
     $html += "</div>"
 
-    # --- INJECT AD GROUPS ---
     $html += "<div style='border-top: 1px solid #334155; padding-top: 10px; margin-bottom: 12px;'>"
     $html += "<div style='color: #f8fafc; font-weight: bold; font-size: 0.95rem; margin-bottom: 6px;'><i class='fa-solid fa-users'></i> Key Access Groups</div>"
 
@@ -243,7 +220,6 @@ if ($adObj) {
         $html += "<div style='color: #7f8c8d; font-size: 0.8rem; margin-top: 4px; font-style: italic;'>...plus $standardGroupCount standard domain groups.</div>"
     }
     $html += "</div>"
-    # ------------------------
 
     $html += "<div style='border-top: 1px solid #334155; padding-top: 10px;'>"
     $html += "<div style='color: #f8fafc; font-weight: bold; font-size: 0.95rem; margin-bottom: 6px;'><i class='fa-solid fa-location-dot'></i> Known Locations</div>"
@@ -254,7 +230,6 @@ if ($adObj) {
             $html += "<div style='color: #cbd5e1; font-size: 0.85rem; margin-bottom: 2px;'>[$i] $($loc.Computer) <span style='color: #64748b;'>(Seen: $($loc.LastSeen))</span></div>"
             $i++
         }
-        # Inject the GUI auto-fill tag
         Write-Output "[GUI:UPDATE_TARGET:$($userHistory[0].Computer)]"
     } else { 
         $html += "<div style='color: #7f8c8d; font-size: 0.85rem;'>No history found.</div>" 
