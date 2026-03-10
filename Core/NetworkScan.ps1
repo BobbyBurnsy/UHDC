@@ -11,7 +11,7 @@
 
 param(
     [Parameter(Mandatory=$false, Position=0)]
-    [string]$TargetUser, # Passed by AppLogic from the AD Input Box
+    [string]$TargetUser,
 
     [Parameter(Mandatory=$false)]
     [string]$SharedRoot,
@@ -25,9 +25,7 @@ param(
 
 $ErrorActionPreference = "Continue"
 
-# ====================================================================
-# TRAINING DATA EXPORT (For Web UI Modal)
-# ====================================================================
+# --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
         StepName = "MULTI-VECTOR IDENTITY LOCATOR"
@@ -39,9 +37,7 @@ if ($GetTrainingData) {
     return
 }
 
-# ====================================================================
-# CORE EXECUTION
-# ====================================================================
+# --- Main Execution ---
 if ([string]::IsNullOrWhiteSpace($TargetUser)) {
     Write-Output "[!] ERROR: No username provided. Please search a user first."
     return
@@ -59,9 +55,7 @@ Write-Output "========================================"
 Write-Output "[UHDC] MULTI-VECTOR NETWORK SCAN"
 Write-Output "========================================"
 
-# ==========================================
-# PHASE 1: PRECISE IDENTITY RESOLUTION
-# ==========================================
+# --- Identity Resolution ---
 $ResolvedUser = $null
 $UPN = $null
 $office = $null
@@ -86,9 +80,7 @@ if (-not $ResolvedUser) {
 $foundPC = $null
 $foundVector = $null
 
-# ==========================================
-# PHASE 2: VECTOR 1 - LOCAL HISTORY
-# ==========================================
+# --- Vector 1: Local History ---
 if (-not $foundPC -and (Test-Path $HistoryFile)) {
     Write-Output " > Vector 1: Checking Local History DB..."
     try {
@@ -110,9 +102,7 @@ if (-not $foundPC -and (Test-Path $HistoryFile)) {
     } catch {}
 }
 
-# ==========================================
-# PHASE 3: VECTOR 2 - CLOUD PIVOT (INTUNE)
-# ==========================================
+# --- Vector 2: Cloud Pivot (Intune) ---
 if (-not $foundPC -and $UPN) {
     Write-Output " > Vector 2: Pivoting to Microsoft Intune..."
     if (Get-MgContext -ErrorAction SilentlyContinue) {
@@ -137,9 +127,7 @@ if (-not $foundPC -and $UPN) {
     }
 }
 
-# ==========================================
-# PHASE 4: VECTOR 3 - SUBNET SWEEP
-# ==========================================
+# --- Vector 3: Subnet Sweep ---
 if (-not $foundPC) {
     Write-Output " > Vector 3: Context-Aware Subnet Sweep..."
     $searchBase = $null
@@ -161,7 +149,6 @@ if (-not $foundPC) {
             }
 
             if ($computers) {
-                # Cap the sweep at 100 to prevent web server timeouts
                 if ($computers.Count -gt 100) { $computers = $computers | Select-Object -First 100 }
 
                 Write-Output "   Scanning $($computers.Count) local machines via WMI..."
@@ -184,18 +171,14 @@ if (-not $foundPC) {
     }
 }
 
-# ==========================================
-# PHASE 5: HTML OUTPUT & GUI HANDOFF
-# ==========================================
+# --- Output & GUI Handoff ---
 if ($foundPC) {
-    # Update the local database so we don't have to hunt for them next time!
     try {
         if (Test-Path $UpdateHelper) {
             & $UpdateHelper -User $ResolvedUser -Computer $foundPC -SharedRoot $SharedRoot | Out-Null
         }
     } catch {}
 
-    # Build the HTML Radar Card
     $html = "<div style='background: #1e293b; padding: 16px; border-radius: 8px; border-left: 4px solid #9b59b6; margin-top: 15px; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); font-family: system-ui, sans-serif;'>"
     $html += "<div style='color: #f8fafc; font-weight: bold; font-size: 1.1rem; margin-bottom: 8px;'><i class='fa-solid fa-satellite-dish'></i> Network Locator Result</div>"
     $html += "<div style='color: #2ecc71; font-size: 1.3rem; font-weight: bold; margin-bottom: 4px;'>$foundPC</div>"
@@ -203,10 +186,11 @@ if ($foundPC) {
     $html += "</div>"
 
     Write-Output $html
-
-    # Send the magic string to AppLogic.ps1 to auto-fill the Target PC box in the UI!
     Write-Output "[GUI:UPDATE_TARGET:$foundPC]"
 
 } else {
     Write-Output "`n[!] Scan exhausted. User is either offline or on an unreachable subnet."
+}
+    Write-Output "`n[!] Scan exhausted. User is either offline or on an unreachable subnet."
+
 }
