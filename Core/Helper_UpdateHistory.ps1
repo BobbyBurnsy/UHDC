@@ -3,9 +3,7 @@
     UHDC Web-Ready Core: Helper_UpdateHistory.ps1
 .DESCRIPTION
     Manually injects or updates a specific User-to-PC mapping 
-    inside the central UserHistory.json database. This allows the system 
-    to instantly update a user's location without waiting for the 
-    Global Network Map to run.
+    inside the central UserHistory.json database.
 #>
 
 param(
@@ -19,9 +17,7 @@ param(
     [string]$SharedRoot
 )
 
-# ------------------------------------------------------------------
-# BULLETPROOF CONFIG LOADER
-# ------------------------------------------------------------------
+# --- Load Configuration ---
 if ([string]::IsNullOrWhiteSpace($SharedRoot)) {
     try {
         $ScriptDir = Split-Path -Path $MyInvocation.MyCommand.Path
@@ -46,18 +42,15 @@ if ([string]::IsNullOrWhiteSpace($User) -or [string]::IsNullOrWhiteSpace($Comput
     return
 }
 
-# Use Join-Path to guarantee perfect slashes
 $HistoryFile = Join-Path -Path $SharedRoot -ChildPath "Core\UserHistory.json"
 $BackupFile  = Join-Path -Path $SharedRoot -ChildPath "Core\UserHistory.json.bak"
 $TempFile    = Join-Path -Path $SharedRoot -ChildPath "Core\UserHistory.json.tmp"
 
-# 1. READ EXISTING DATABASE SAFELY
+# --- Read Database ---
 $db = @{}
 $initialCount = 0
 
 if (Test-Path $HistoryFile) {
-    # CRITICAL: Only backup if the file is healthy (>100 bytes).
-    # This stops a corrupted 0-byte file from overwriting a good backup.
     if ((Get-Item $HistoryFile).Length -gt 100) {
         Copy-Item -Path $HistoryFile -Destination $BackupFile -Force
     }
@@ -82,7 +75,7 @@ if (Test-Path $HistoryFile) {
     }
 }
 
-# 2. ADD OR UPDATE THE RECORD
+# --- Update Record ---
 $scanKey = "$User-$Computer"
 $timeStamp = (Get-Date).ToString("yyyy-MM-dd HH:mm")
 
@@ -90,7 +83,6 @@ if ($db.ContainsKey($scanKey)) {
     $db[$scanKey].LastSeen = $timeStamp
     $db[$scanKey].Source   = "UHDC-Update"
 } else {
-    # Cast as PSCustomObject so it perfectly matches the parsed JSON format
     $db[$scanKey] = [PSCustomObject]@{
         User     = $User
         Computer = $Computer
@@ -99,23 +91,17 @@ if ($db.ContainsKey($scanKey)) {
     }
 }
 
-# 3. WRITE BACK TO DISK (ATOMIC & PROTECTED)
+# --- Write to Disk ---
 if ($db.Count -ge $initialCount -and $db.Count -gt 0) {
     try {
         $finalList = @($db.Values | Sort-Object User)
-
-        # STEP A: Convert to JSON *in memory* first. 
-        # If this crashes, the file is untouched.
         $jsonOutput = ConvertTo-Json -InputObject $finalList -Depth 3 -ErrorAction Stop
 
         if ([string]::IsNullOrWhiteSpace($jsonOutput)) {
             throw "Generated JSON string was completely empty."
         }
 
-        # STEP B: Write to a temporary file.
         Set-Content -Path $TempFile -Value $jsonOutput -Force -ErrorAction Stop
-
-        # STEP C: Atomic Swap. Instantly replace the live file.
         Move-Item -Path $TempFile -Destination $HistoryFile -Force -ErrorAction Stop
 
     } catch {
@@ -125,4 +111,9 @@ if ($db.Count -ge $initialCount -and $db.Count -gt 0) {
 } else {
     Write-Output "`n[!] PROTECTION TRIGGERED: Attempted to save fewer records than loaded."
     Write-Output "    Operation aborted to protect database."
+}
+} else {
+    Write-Output "`n[!] PROTECTION TRIGGERED: Attempted to save fewer records than loaded."
+    Write-Output "    Operation aborted to protect database."
+
 }
