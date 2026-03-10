@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UHDC | Enterprise Workspace</title>
 
-    <!--Strict Content Security Policy to prevent XSS -->
+    <!-- Content Security Policy -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self';">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        /* CORE THEME VARIABLES */
+        /* --- Core Theme Variables --- */
         :root {
             --bg-base: #f4f7f6; --bg-surface: #ffffff; --text-primary: #2c3e50; --text-secondary: #7f8c8d;
             --accent-primary: #3498db; --accent-success: #2ecc71; --accent-warning: #f1c40f; --accent-danger: #e74c3c;
@@ -32,27 +32,22 @@
 
         body { background-color: var(--bg-base); color: var(--text-primary); display: flex; height: 100vh; overflow: hidden; transition: var(--transition); }
 
-        /* SIDEBAR */
+        /* --- Sidebar --- */
         .sidebar { width: 260px; background-color: var(--bg-surface); padding: 20px; display: flex; flex-direction: column; box-shadow: var(--shadow-sm); z-index: 10; }
         .brand { font-size: 1.4rem; font-weight: 800; color: var(--accent-primary); margin-bottom: 24px; display: flex; align-items: center; gap: 12px; }
         .nav-section { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-secondary); margin: 16px 0 8px 0; font-weight: 600; }
         .nav-btn { background: transparent; border: none; color: var(--text-primary); padding: 10px 14px; border-radius: var(--border-radius); text-align: left; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 12px; width: 100%; margin-bottom: 6px; }
         .nav-btn:hover { background-color: rgba(52, 152, 219, 0.1); color: var(--accent-primary); transform: translateX(4px); }
 
-        /* WORKSPACE HUD LAYOUT */
+        /* --- Workspace Layout --- */
         .workspace { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
-
-        /* Top row takes up all available remaining vertical space */
         .top-row { display: flex; gap: 20px; flex: 1; min-height: 220px; }
         .top-left-col { flex: 0 0 380px; display: flex; flex-direction: column; gap: 16px; }
         .top-right-col { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-
         .middle-row { display: flex; gap: 16px; flex: 0 0 auto; flex-wrap: wrap; }
-
-        /* Bottom row shrinks to perfectly fit the buttons */
         .bottom-row { flex: 0 0 auto; display: flex; flex-direction: column; background: var(--bg-surface); border-radius: var(--border-radius); padding: 16px; box-shadow: var(--shadow-sm); }
 
-        /* SEARCH & HEADER */
+        /* --- Search & Header --- */
         .header { display: flex; flex-direction: column; gap: 12px; }
         .search-container { position: relative; width: 100%; }
         .search-container i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); }
@@ -60,13 +55,13 @@
         body.dark-theme .search-bar { border-color: rgba(255,255,255,0.1); }
         .search-bar:focus { box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3); }
 
-        /* KPI CARDS */
+        /* --- KPI Cards --- */
         .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; flex: 1; min-width: 300px; }
         .card { background: var(--bg-surface); border-radius: var(--border-radius); padding: 16px; box-shadow: var(--shadow-sm); transition: var(--transition); border-top: 4px solid var(--accent-primary); }
         .card-title { color: var(--text-secondary); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; }
         .card-value { font-size: 1.4rem; font-weight: 700; margin-top: 4px; color: var(--text-primary); }
 
-        /* PANELS & BUTTONS */
+        /* --- Panels & Buttons --- */
         .action-panel { background: var(--bg-surface); border-radius: var(--border-radius); padding: 16px; box-shadow: var(--shadow-sm); flex: 1; min-width: 300px; display: none; animation: slideDown 0.3s ease-out; }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -75,7 +70,7 @@
         .action-btn:hover { background: var(--accent-primary); color: white; border-color: var(--accent-primary); }
         .action-btn.danger:hover { background: var(--accent-danger); color: white; border-color: var(--accent-danger); }
 
-        /* TELEMETRY */
+        /* --- Telemetry --- */
         .panel-header { font-size: 1rem; font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; color: var(--text-primary); }
         .telemetry-stream { flex: 1; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; overflow-y: auto; font-family: 'Consolas', monospace; font-size: 0.85rem; color: #e2e8f0; }
         .log-entry { margin-bottom: 6px; border-left: 2px solid transparent; padding-left: 8px; word-wrap: break-word; }
@@ -83,7 +78,7 @@
         .log-success { border-color: var(--accent-success); color: var(--accent-success); }
         .log-warn { border-color: var(--accent-warning); color: var(--accent-warning); }
 
-        /* MODALS */
+        /* --- Modals --- */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
         .modal-content { background: var(--bg-surface); width: 600px; border-radius: var(--border-radius); padding: 24px; box-shadow: var(--shadow-md); border-top: 4px solid var(--accent-warning); }
         .modal-header { color: var(--accent-warning); font-weight: bold; font-size: 1.2rem; margin-bottom: 12px; }
@@ -117,7 +112,6 @@
 
         <!-- TOP ROW: Info & Telemetry -->
         <div class="top-row">
-            <!-- Top Left: Header, Search, Profile -->
             <div class="top-left-col">
                 <header class="header">
                     <div>
@@ -147,7 +141,6 @@
                 </div>
             </div>
 
-            <!-- Top Right: WIDE Telemetry Stream -->
             <div class="top-right-col">
                 <div class="panel-header">
                     <span><i class="fa-solid fa-microchip"></i> Telemetry Stream</span>
@@ -161,7 +154,6 @@
 
         <!-- MIDDLE ROW: KPIs & Quick Actions -->
         <div class="middle-row">
-            <!-- KPIs -->
             <div class="kpi-grid">
                 <div class="card" style="border-color: var(--accent-primary);">
                     <div class="card-title">Target PC</div>
@@ -182,7 +174,6 @@
                 </div>
             </div>
 
-            <!-- AD Actions -->
             <div id="quick-actions" class="action-panel" style="border-left: 4px solid var(--accent-success);">
                 <h3 style="margin-bottom: 10px; color: var(--text-secondary); font-size: 0.9rem; text-transform: uppercase;"><i class="fa-solid fa-user-shield"></i> Active Directory</h3>
                 <div style="display: flex; gap: 10px;">
@@ -191,7 +182,6 @@
                 </div>
             </div>
 
-            <!-- Remote Access -->
             <div id="remote-access" class="action-panel" style="border-left: 4px solid var(--accent-primary);">
                 <h3 style="margin-bottom: 10px; color: var(--text-secondary); font-size: 0.9rem; text-transform: uppercase;"><i class="fa-solid fa-desktop"></i> Remote Access</h3>
                 <div style="display: flex; gap: 10px;">
@@ -206,7 +196,6 @@
         <div class="bottom-row">
             <h3 style="margin-bottom: 12px; color: var(--text-secondary); font-size: 1rem;"><i class="fa-solid fa-toolbox"></i> Endpoint Remediation & Diagnostics</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;">
-                <!-- Diagnostics -->
                 <button class="action-btn" onclick="executeTool('SystemUptimeVerification.ps1')"><i class="fa-solid fa-clock"></i> Verify Uptime</button>
                 <button class="action-btn" onclick="executeTool('ActiveInterfaceDiagnostics.ps1')"><i class="fa-solid fa-network-wired"></i> Interface Diag</button>
                 <button class="action-btn" onclick="executeTool('LocalPrivilegeAuditing.ps1')"><i class="fa-solid fa-user-shield"></i> Privilege Audit</button>
@@ -216,7 +205,6 @@
                 <button class="action-btn" onclick="executeTool('HardwareDegradationAnalysis.ps1')"><i class="fa-solid fa-battery-half"></i> Battery Health</button>
                 <button class="action-btn" onclick="executeTool('AutomatedWarrantyRouting.ps1')"><i class="fa-solid fa-laptop-medical"></i> Warranty Route</button>
 
-                <!-- Remediation -->
                 <button class="action-btn" onclick="executeTool('PrintSpoolerOrchestration.ps1')"><i class="fa-solid fa-print"></i> Spooler Reset</button>
                 <button class="action-btn" onclick="executeTool('BackgroundPolicyEnforcement.ps1')"><i class="fa-solid fa-sync"></i> Enforce Policy</button>
                 <button class="action-btn" onclick="executeTool('MECMAgentSynchronization.ps1')"><i class="fa-solid fa-server"></i> MECM Sync</button>
@@ -224,7 +212,6 @@
                 <button class="action-btn" onclick="executeTool('DNSRoutingRemediation.ps1')"><i class="fa-solid fa-globe"></i> DNS Flush</button>
                 <button class="action-btn" onclick="executeTool('OutOfBandDataPreservation.ps1')"><i class="fa-solid fa-bookmark"></i> OOB Backup</button>
 
-                <!-- Danger/Heavy Actions -->
                 <button class="action-btn danger" onclick="executeTool('ChromiumProfileRebuild.ps1')"><i class="fa-brands fa-chrome"></i> Profile Rebuild</button>
                 <button class="action-btn danger" onclick="openRemoteInstallModal()"><i class="fa-solid fa-download"></i> Zero-Touch Deploy</button>
                 <button class="action-btn danger" onclick="openCustomScriptModal()"><i class="fa-solid fa-scroll"></i> Custom Scripts</button>
@@ -238,7 +225,7 @@
     </main>
 
     <!-- ========================================== -->
-    <!-- MODALS (Hidden by default)                 -->
+    <!-- MODALS                                     -->
     <!-- ========================================== -->
 
     <!-- APPEARANCE MODAL -->
@@ -303,7 +290,7 @@
     <div class="modal-overlay" id="softwareInventoryModal">
         <div class="modal-content" style="width: 450px; border-top-color: var(--accent-primary);">
             <div class="modal-header" style="color: var(--accent-primary);"><i class="fa-solid fa-box-open"></i> Software Inventory Audit</div>
-            <div class="modal-desc">Enter a keyword to search for a specific application (e.g., "Adobe" or "Chrome"). Leave blank to pull a complete list of all installed software.</div>
+            <div class="modal-desc">Enter a keyword to search for a specific application. Leave blank to pull a complete list of all installed software.</div>
             <input type="text" id="softwareKeyword" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.2); background: var(--bg-base); color: var(--text-primary); margin-bottom: 20px; font-size: 1rem; outline: none;" placeholder="e.g., Office, VPN, Reader..." onkeydown="if(event.key === 'Enter') submitSoftwareInventory()">
             <div class="modal-actions">
                 <button class="action-btn danger" onclick="document.getElementById('softwareInventoryModal').style.display='none'">Cancel</button>
@@ -324,7 +311,7 @@
                 <h4 style="margin-bottom: 10px; color: var(--text-secondary);"><i class="fa-solid fa-bullseye"></i> Deployment Target(s)</h4>
                 <textarea id="deployTargetInput" rows="3" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.2); background: var(--bg-surface); color: var(--text-primary); font-family: Consolas, monospace; resize: vertical;" placeholder="PC-001, PC-002..."></textarea>
                 <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px;">
-                    <i class="fa-solid fa-lightbulb" style="color: var(--accent-warning);"></i> <strong>Tip:</strong> You can paste a column of PC names directly from Excel. Newlines and spaces are automatically handled.
+                    <i class="fa-solid fa-lightbulb" style="color: var(--accent-warning);"></i> <strong>Tip:</strong> You can paste a column of PC names directly from Excel.
                 </div>
             </div>
 
@@ -450,13 +437,12 @@
 
         const telemetry = document.getElementById('telemetry-output');
 
-        // --- GRACEFUL SHUTDOWN ---
-        // Fires a beacon to the backend the millisecond the user clicks the 'X' to close the window
+        // --- Application Teardown ---
         window.addEventListener('beforeunload', function () {
             navigator.sendBeacon('/api/system/shutdown');
         });
 
-        // --- APPEARANCE & THEME LOGIC ---
+        // --- Appearance & Theme Logic ---
         function openAppearanceModal() { document.getElementById('appearanceModal').style.display = 'flex'; }
 
         function setThemeMode(mode) {
@@ -497,7 +483,7 @@
             }
         };
 
-        // --- TELEMETRY LOGGING ---
+        // --- Telemetry Logging ---
         function logTelemetry(message, type = "info") {
             const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
             const div = document.createElement('div');
@@ -507,7 +493,7 @@
             telemetry.scrollTop = telemetry.scrollHeight;
         }
 
-		// --- REMOTE INSTALL LOGIC ---
+		// --- Remote Install Logic ---
 		async function openRemoteInstallModal() {
 			document.getElementById('remoteInstallModal').style.display = 'flex';
 			document.getElementById('softwareLibraryTableBody').innerHTML = "<tr><td colspan='3' style='padding: 15px; text-align: center;'>Loading library...</td></tr>";
@@ -623,7 +609,7 @@
 			} catch (error) { logTelemetry(`API Request Failed.`, "warn"); }
 		}
 
-		// --- CUSTOM SCRIPT LOGIC ---
+		// --- Custom Script Logic ---
 		async function openCustomScriptModal() {
 			document.getElementById('customScriptModal').style.display = 'flex';
 			document.getElementById('scriptLibraryTableBody').innerHTML = "<tr><td colspan='3' style='padding: 15px; text-align: center;'>Loading library...</td></tr>";
@@ -737,7 +723,7 @@
 			} catch (error) { logTelemetry(`API Request Failed.`, "warn"); }
 		}
 
-        // --- EVENT LOGS MODAL LOGIC ---
+        // --- Event Logs Modal Logic ---
         function promptEventLogs() {
             if (!currentTargetPC) { logTelemetry("No Target PC selected. Please search a user first.", "warn"); return; }
             document.getElementById('eventLogKeyword').value = ""; 
@@ -751,7 +737,7 @@
             executeTool('AdvancedEventForensics.ps1', { Keyword: keyword });
         }
 
-		// --- SOFTWARE INVENTORY LOGIC ---
+		// --- Software Inventory Logic ---
 		function promptSoftwareInventory() {
 			if (!currentTargetPC) { logTelemetry("No Target PC selected. Please search a user first.", "warn"); return; }
 			document.getElementById('softwareKeyword').value = ""; 
@@ -765,7 +751,7 @@
 			executeTool('SoftwareInventoryAudit.ps1', { Keyword: keyword });
 		}
 
-		// --- INTUNE / ENTRA ID LOGIC ---
+		// --- Intune / Entra ID Logic ---
 		let currentIntuneDevices = [];
 
 		async function openIntuneModal() {
@@ -869,7 +855,7 @@
 			}
 		}
 
-        // --- API DISPATCHERS ---
+        // --- API Dispatchers ---
 		async function executeIdentityAction(actionType, btnElement) {
 			if (!currentTargetUser) { logTelemetry("Please search a Target User first.", "warn"); return; }
 
@@ -1034,7 +1020,7 @@
             finally { document.getElementById('kpi-target-loader').style.display = 'none'; }
         }
 
-        // --- GLOBAL HOTKEYS ---
+        // --- Global Hotkeys ---
         document.addEventListener('keydown', function(event) {
             if (event.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
                 event.preventDefault(); 
@@ -1157,6 +1143,6 @@
     </script>
 </body>
 </html>
-
 </html>
+
 
