@@ -2,11 +2,10 @@
 .SYNOPSIS
     UHDC Web-Ready Tool: DeepStorageRemediation.ps1
 .DESCRIPTION
-    A heavy-duty storage remediation tool. Silently clears the MECM (SCCM) cache,
-    force-empties Windows Temp, all User Temp folders, the Recycle Bin, and finally 
-    triggers a background Windows Disk Cleanup (cleanmgr /sagerun:1).
-    Attempts WinRM first. If blocked by firewall, falls back to a Base64-encoded
-    payload executed via PsExec as SYSTEM.
+    A heavy-duty storage remediation tool. Calculates free space, silently clears 
+    the MECM (SCCM) cache, force-empties Windows Temp, all User Temp folders, 
+    and the Recycle Bin. Recalculates free space to determine total data purged,
+    then triggers a background Windows Disk Cleanup (cleanmgr /sagerun:1).
 #>
 
 param(
@@ -14,7 +13,7 @@ param(
     [string]$Target,
 
     [Parameter(Mandatory=$false, Position=1)]
-    [string]$TargetUser, # Passed by AppLogic, but unused in this specific script
+    [string]$TargetUser,
 
     [Parameter(Mandatory=$false)]
     [string]$SharedRoot,
@@ -25,23 +24,19 @@ param(
 
 $ErrorActionPreference = "Continue"
 
-# ====================================================================
-# TRAINING DATA EXPORT (For Web UI Modal)
-# ====================================================================
+# --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
         StepName = "DEEP STORAGE REMEDIATION"
-        Description = "We execute a unified 4-step deep clean pipeline: 1. Purging the MECM (SCCM) cache directory. 2. Recursively deleting Windows Temp and all User Temp directories. 3. Emptying the system-wide Recycle Bin. 4. Triggering a silent Windows Disk Cleanup (cleanmgr /sagerun:1) in the background. If the local firewall blocks WinRM, we automatically fall back to PsExec, passing a Base64-encoded PowerShell payload to safely execute the remediation as the SYSTEM account."
-        Code = "try { Invoke-Command -ComputerName `$Target -ScriptBlock { Remove-Item 'C:\Windows\ccmcache\*' -Force; Remove-Item 'C:\Windows\Temp\*' -Force; Clear-RecycleBin -Force; Start-Process 'cleanmgr.exe' -ArgumentList '/sagerun:1' } } catch { psexec.exe \\`$Target -s powershell.exe -EncodedCommand `$Base64 }"
+        Description = "We execute a unified pipeline: 1. Query Win32_LogicalDisk for current free space. 2. Purge the MECM (SCCM) cache, Windows Temp, User Temp directories, and the Recycle Bin. 3. Re-query the disk to calculate exact bytes freed. 4. Trigger a silent Windows Disk Cleanup (cleanmgr /sagerun:1) in the background."
+        Code = "`$before = (Get-CimInstance Win32_LogicalDisk -Filter `"DeviceID='C:'`").FreeSpace`nRemove-Item 'C:\Windows\ccmcache\*' -Recurse -Force`n`$after = (Get-CimInstance Win32_LogicalDisk -Filter `"DeviceID='C:'`").FreeSpace"
         InPerson = "Opening Control Panel to clear the Configuration Manager cache, pressing Win+R to delete %temp% files, emptying the Recycle Bin, and running the Disk Cleanup utility."
     }
     $data | ConvertTo-Json | Write-Output
     return
 }
 
-# ====================================================================
-# CORE EXECUTION
-# ====================================================================
+# --- Main Execution ---
 Write-Output "========================================"
 Write-Output "[UHDC] DEEP STORAGE REMEDIATION"
 Write-Output "========================================"
@@ -51,84 +46,115 @@ if ([string]::IsNullOrWhiteSpace($Target)) {
     return 
 }
 
-# 1. Fast Ping Check to prevent WinRM timeouts
 if (-not (Test-Connection -ComputerName $Target -Count 1 -Quiet)) {
     Write-Output "[!] Offline. $Target is not responding to ping."
     return
 }
 
-$ActionLog = "Deep Storage Remediation Executed (MECM/Temp/Recycle/Sagerun)"
+$ActionLog = "Deep Storage Remediation Executed"
 
-# Define the unified core remediation payload
-$Payload = {
-    # 1. MECM / SCCM Cache Cleanup
-    if (Test-Path "C:\Windows\ccmcache") {
-        Remove-Item -Path "C:\Windows\ccmcache\*" -Recurse -Force -ErrorAction SilentlyContinue
-    } else {
-        New-Item -ItemType Directory -Path "C:\Windows\ccmcache" -Force -ErrorAction SilentlyContinue | Out-Null
+$PayloadString = @"
+    `$ErrorActionPreference = 'SilentlyContinue'
+
+    # 1. Get Initial Free Space
+    `$driveBefore = Get-CimInstance Win32_LogicalDisk -Filter `"DeviceID='C:'`"
+    `$spaceBefore = `$driveBefore.FreeSpace
+
+    # 2. MECM / SCCM Cache Cleanup
+    if (Test-Path `"C:\Windows\ccmcache`") { Remove-Item -Path `"C:\Windows\ccmcache\*`" -Recurse -Force }
+
+    # 3. Windows Temp Cleanup
+    Remove-Item -Path `"C:\Windows\Temp\*`" -Recurse -Force
+
+    # 4. User Temp Cleanup
+    `$userProfiles = Get-ChildItem -Path `"C:\Users`" -Directory
+    foreach (`$profile in `$userProfiles) {
+        Remove-Item -Path `"`$(`$profile.FullName)\AppData\Local\Temp\*`" -Recurse -Force
     }
 
-    # 2. Windows Temp Cleanup
-    Remove-Item -Path "C:\Windows\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
+    # 5. Recycle Bin Cleanup
+    Clear-RecycleBin -Force
 
-    # 3. User Temp Cleanup (Iterate through all profiles)
-    $userProfiles = Get-ChildItem -Path "C:\Users" -Directory -ErrorAction SilentlyContinue
-    foreach ($profile in $userProfiles) {
-        $tempPath = "$($profile.FullName)\AppData\Local\Temp\*"
-        Remove-Item -Path $tempPath -Recurse -Force -ErrorAction SilentlyContinue
-    }
+    # 6. Get Final Free Space
+    `$driveAfter = Get-CimInstance Win32_LogicalDisk -Filter `"DeviceID='C:'`"
+    `$spaceAfter = `$driveAfter.FreeSpace
 
-    # 4. Recycle Bin Cleanup
-    Clear-RecycleBin -Force -ErrorAction SilentlyContinue
+    `$freedBytes = `$spaceAfter - `$spaceBefore
+    if (`$freedBytes -lt 0) { `$freedBytes = 0 }
 
-    # 5. Trigger Background Disk Cleanup
-    Start-Process -FilePath "cleanmgr.exe" -ArgumentList "/sagerun:1" -WindowStyle Hidden -ErrorAction SilentlyContinue
-}
+    # 7. Trigger Background Disk Cleanup
+    Start-Process -FilePath `"cleanmgr.exe`" -ArgumentList `"/sagerun:1`" -WindowStyle Hidden
 
-# 2. Execute Remote Remediation
+    `$results = @{ SpaceFreedBytes = `$freedBytes }
+    `$json = `$results | ConvertTo-Json -Compress
+    Write-Output `"---JSON_START---`$json---JSON_END---`"
+"@
+
+$PayloadBlock = [scriptblock]::Create($PayloadString)
+$RawOutputString = $null
+$MethodUsed = "WinRM"
+
 try {
     Write-Output "[i] Attempting connection to $Target via WinRM..."
     Write-Output " > Purging MECM cache, Temp directories, and Recycle Bin..."
     Write-Output " > Dispatching background Disk Cleanup (cleanmgr)..."
 
-    Invoke-Command -ComputerName $Target -ErrorAction Stop -ScriptBlock $Payload
-
-    Write-Output "`n[UHDC SUCCESS] Deep Storage Remediation completed successfully via WinRM!"
-
+    $RawOutputString = Invoke-Command -ComputerName $Target -ErrorAction Stop -ScriptBlock $PayloadBlock | Out-String
 } catch {
     Write-Output "[!] WinRM Failed or Blocked. Initiating PsExec Fallback..."
+    $MethodUsed = "PsExec"
 
     $psExecPath = Join-Path -Path $SharedRoot -ChildPath "Core\psexec.exe"
     if (Test-Path $psExecPath) {
         try {
-            # Safely encode the payload to Base64 for PS 5.1 execution
-            $Bytes = [System.Text.Encoding]::Unicode.GetBytes($Payload.ToString())
+            $Bytes = [System.Text.Encoding]::Unicode.GetBytes($PayloadString)
             $EncodedCommand = [Convert]::ToBase64String($Bytes)
-
-            # Execute silently as SYSTEM, capturing the process to check the exit code
-            $ArgsList = "-accepteula -nobanner -d \\$Target -s powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $EncodedCommand"
-            $Process = Start-Process -FilePath $psExecPath -ArgumentList $ArgsList -Wait -WindowStyle Hidden -PassThru
-
-            if ($Process.ExitCode -eq 0) {
-                Write-Output "`n[UHDC SUCCESS] Deep Storage Remediation completed successfully via PsExec!"
-                $ActionLog += " [PsExec Fallback]"
-            } else {
-                Write-Output "`n[!] ERROR: PsExec executed but returned exit code $($Process.ExitCode)."
-                Write-Output "    The command may have failed or the system is unresponsive."
-            }
+            $ArgsList = "/accepteula \\$Target -s powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $EncodedCommand"
+            $RawOutputString = & $psExecPath $ArgsList 2>&1 | Out-String
+            $ActionLog += " [PsExec Fallback]"
         } catch {
             Write-Output "`n[!] FATAL ERROR: Both WinRM and PsExec failed."
-            Write-Output "    Details: $($_.Exception.Message)"
+            return
         }
     } else {
         Write-Output "`n[!] FATAL ERROR: WinRM failed and psexec.exe is missing from \Core."
+        return
     }
 }
 
-# --- AUDIT LOG INJECTION ---
-if (-not [string]::IsNullOrWhiteSpace($SharedRoot)) {
-    $AuditHelper = Join-Path -Path $SharedRoot -ChildPath "Core\Helper_AuditLog.ps1"
-    if (Test-Path $AuditHelper) {
-        & $AuditHelper -Target $Target -Action $ActionLog -SharedRoot $SharedRoot
+if ($RawOutputString -match '---JSON_START---(.*?)---JSON_END---') {
+    try {
+        $data = $matches[1] | ConvertFrom-Json
+        $bytes = [math]::Round($data.SpaceFreedBytes, 0)
+
+        $displaySpace = "0 MB"
+        if ($bytes -gt 1GB) {
+            $displaySpace = "$([math]::Round($bytes / 1GB, 2)) GB"
+        } elseif ($bytes -gt 0) {
+            $displaySpace = "$([math]::Round($bytes / 1MB, 2)) MB"
+        }
+
+        Write-Output "`n[UHDC SUCCESS] Deep Storage Remediation completed via $MethodUsed!"
+
+        $html = "<div style='background: #1e293b; padding: 16px; border-radius: 8px; border-left: 4px solid #f1c40f; margin-top: 10px; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); font-family: system-ui, sans-serif;'>"
+        $html += "<div style='color: #f8fafc; font-weight: bold; font-size: 1.1rem; margin-bottom: 12px;'><i class='fa-solid fa-broom'></i> Storage Recovery Report</div>"
+        $html += "<div style='display: grid; grid-template-columns: 100px 1fr; gap: 8px; font-size: 0.95rem; margin-bottom: 12px;'>"
+        $html += "<span style='color: #94a3b8;'>Target:</span><span style='color: #cbd5e1;'>$Target</span>"
+        $html += "<span style='color: #94a3b8;'>Space Freed:</span><span style='color: #f1c40f; font-weight: bold; font-size: 1.4rem;'>$displaySpace</span>"
+        $html += "</div>"
+        $html += "<div style='border-top: 1px solid #334155; padding-top: 10px; color: #94a3b8; font-size: 0.85rem;'>"
+        $html += "<i class='fa-solid fa-circle-check' style='color: #2ecc71;'></i> Caches purged. Background Disk Cleanup (cleanmgr) is now running silently."
+        $html += "</div></div>"
+
+        Write-Output $html
+
+        if (-not [string]::IsNullOrWhiteSpace($SharedRoot)) {
+            $AuditHelper = Join-Path -Path $SharedRoot -ChildPath "Core\Helper_AuditLog.ps1"
+            if (Test-Path $AuditHelper) { & $AuditHelper -Target $Target -Action "$ActionLog ($displaySpace Freed)" -SharedRoot $SharedRoot }
+        }
+    } catch {
+        Write-Output "`n[!] ERROR: Failed to parse storage data JSON."
     }
+} else {
+    Write-Output "`n[!] ERROR: No valid storage data returned from target."
 }
