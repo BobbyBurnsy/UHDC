@@ -5,25 +5,23 @@
     A headless API router for Microsoft Intune and Entra ID management.
     Takes an Action parameter from the Web UI to retrieve devices, BitLocker keys,
     LAPS passwords, or manage MFA methods via the Microsoft Graph API.
-    Enforces strict Cross-Agency Domain Filtering.
 #>
 
 param(
     [Parameter(Mandatory=$false, Position=0)]
-    [string]$Target, # The Computer Name
+    [string]$Target,
 
     [Parameter(Mandatory=$false, Position=1)]
-    [string]$TargetUser, # The Username
+    [string]$TargetUser,
 
     [Parameter(Mandatory=$false)]
     [string]$SharedRoot,
 
-    # --- EXTRA ARGS FROM WEB UI ---
     [Parameter(Mandatory=$false)]
     [string]$Action = "GetDevices",
 
     [Parameter(Mandatory=$false)]
-    [string]$DeviceId, # The AzureAdDeviceId or Intune ManagedDeviceId
+    [string]$DeviceId,
 
     [Parameter(Mandatory=$false)]
     [string]$PhoneNumber,
@@ -34,13 +32,11 @@ param(
 
 $ErrorActionPreference = "Continue"
 
-# ====================================================================
-# TRAINING DATA EXPORT (For Web UI Modal)
-# ====================================================================
+# --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
         StepName = "CLOUD IDENTITY ORCHESTRATOR"
-        Description = "We are querying the Microsoft Graph API using your active Entra ID session. The script extracts your technician email domain and compares it against the target user to enforce strict tenant security boundaries. It operates entirely on Delegated Permissions, meaning it cannot grant you any access you don't already have in the Azure portal."
+        Description = "We are querying the Microsoft Graph API using your active Entra ID session. The script extracts your technician email domain and compares it against the target user to enforce tenant security boundaries. It operates entirely on Delegated Permissions."
         Code = "Connect-MgGraph -Scopes `$scopes`n`$device = Get-MgDeviceManagementManagedDevice -Filter `"deviceName eq '`$Target'`""
         InPerson = "Logging into endpoint.microsoft.com, searching for the user or device, verifying their department matches your support scope, and clicking the corresponding action button."
     }
@@ -48,9 +44,7 @@ if ($GetTrainingData) {
     return
 }
 
-# ====================================================================
-# 1. GRAPH API AUTHENTICATION & DOMAIN FILTERING
-# ====================================================================
+# --- Graph API Authentication & Domain Filtering ---
 $scopes = @(
     "User.Read.All",
     "DeviceManagementManagedDevices.ReadWrite.All",
@@ -60,27 +54,23 @@ $scopes = @(
     "UserAuthenticationMethod.ReadWrite.All"
 )
 
-# Ensure connected
 if (-not (Get-MgContext -ErrorAction SilentlyContinue)) {
     try { Connect-MgGraph -Scopes $scopes -ErrorAction Stop }
     catch { Write-Output '{"error":"Failed to authenticate to Microsoft Graph API."}'; return }
 }
 
-# Determine Technician Domain
 $TechUPN = (Get-MgContext).Account
 $TechDomain = if ($TechUPN -match "@(.*)$") { $matches[1] } else { "" }
 
-# Resolve TargetUser to an Email Address (if it's just a SAMAccountName)
 $EmailToPass = $TargetUser
 if (-not [string]::IsNullOrWhiteSpace($TargetUser) -and $TargetUser -notmatch "@") {
     try {
         $adObj = Get-ADUser -Identity $TargetUser -Properties EmailAddress -ErrorAction SilentlyContinue
         if ($adObj.EmailAddress) { $EmailToPass = $adObj.EmailAddress }
-        else { $EmailToPass = "$TargetUser@$TechDomain" } # Fallback guess
+        else { $EmailToPass = "$TargetUser@$TechDomain" }
     } catch { $EmailToPass = "$TargetUser@$TechDomain" }
 }
 
-# Enforce Domain Boundary
 if (-not [string]::IsNullOrWhiteSpace($EmailToPass) -and $EmailToPass -match "@(.*)$") {
     if ($matches[1] -ne $TechDomain) {
         Write-Output '{"error":"Cross-Agency Block: Target user belongs to a different domain."}'
@@ -88,23 +78,18 @@ if (-not [string]::IsNullOrWhiteSpace($EmailToPass) -and $EmailToPass -match "@(
     }
 }
 
-# ====================================================================
-# 2. ACTION ROUTING
-# ====================================================================
-
+# --- Action Routing ---
 try {
     switch ($Action) {
         "GetDevices" {
             $RawDeviceList = @()
             $ResolvedUser = $null
 
-            # Vector 1: Search by Computer Name
             if (-not [string]::IsNullOrWhiteSpace($Target)) {
                 $deviceMatch = Get-MgDeviceManagementManagedDevice -Filter "deviceName eq '$Target'" -ErrorAction SilentlyContinue
                 if ($deviceMatch) { $RawDeviceList += $deviceMatch }
             }
 
-            # Vector 2: Search by User
             if (-not [string]::IsNullOrWhiteSpace($EmailToPass)) {
                 $users = Get-MgUser -Filter "userPrincipalName eq '$EmailToPass' or mail eq '$EmailToPass'" -ErrorAction SilentlyContinue
                 if ($users) {
@@ -115,7 +100,6 @@ try {
             }
 
             if ($RawDeviceList.Count -gt 0) {
-                # Deduplicate and format for JSON
                 $GlobalDevices = $RawDeviceList | Select-Object -Unique -Property Id | Sort-Object deviceName
                 $exportList = @()
                 foreach ($dev in $GlobalDevices) {
@@ -130,7 +114,7 @@ try {
                 }
                 $exportList | ConvertTo-Json -Depth 3 | Write-Output
             } else {
-                Write-Output "[]" # Empty JSON array
+                Write-Output "[]"
             }
         }
 
@@ -138,7 +122,6 @@ try {
             $keys = Get-MgInformationProtectionBitlockerRecoveryKey -Filter "deviceId eq '$DeviceId'" -Property "key" -ErrorAction Stop
             if ($keys) { 
                 $keyStr = $($keys[0].Key)
-                # QoL: Inject a Copy to Clipboard button
                 $html = "<div style='display: flex; justify-content: space-between; align-items: center; color:#2ecc71; font-weight:bold; font-size:1.1rem;'>"
                 $html += "<span><i class='fa-solid fa-key'></i> RECOVERY KEY: $keyStr</span>"
                 $html += "<button onclick=`"copyToClipboard('$keyStr', this)`" style='background: transparent; border: 1px solid #2ecc71; color: #2ecc71; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;'><i class='fa-regular fa-copy'></i> Copy</button>"
@@ -153,7 +136,6 @@ try {
             $lapsData = Invoke-MgGraphRequest -Method GET -Uri $uri -ErrorAction Stop
             if ($lapsData.value) { 
                 $pwStr = $($lapsData.value.credentials.password)
-                # QoL: Inject a Copy to Clipboard button
                 $html = "<div style='display: flex; justify-content: space-between; align-items: center; color:#f1c40f; font-weight:bold; font-size:1.1rem;'>"
                 $html += "<span><i class='fa-solid fa-user-shield'></i> CLOUD LAPS: $pwStr</span>"
                 $html += "<button onclick=`"copyToClipboard('$pwStr', this)`" style='background: transparent; border: 1px solid #f1c40f; color: #f1c40f; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;'><i class='fa-regular fa-copy'></i> Copy</button>"
@@ -207,4 +189,8 @@ try {
     }
 } catch {
     Write-Output "<div style='color:#e74c3c;'><i class='fa-solid fa-circle-xmark'></i> [!] Graph API Error: $($_.Exception.Message)</div>"
+}
+} catch {
+    Write-Output "<div style='color:#e74c3c;'><i class='fa-solid fa-circle-xmark'></i> [!] Graph API Error: $($_.Exception.Message)</div>"
+
 }
