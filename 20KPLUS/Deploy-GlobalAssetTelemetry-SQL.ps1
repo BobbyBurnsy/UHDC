@@ -112,4 +112,3 @@ Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction Silent
 Register-ScheduledTask -TaskName $TaskName -Xml $TaskXML -Force | Out-Null
 
 Write-Output "[OK] UHDC SQL Telemetry Agent Deployed Successfully."
-
