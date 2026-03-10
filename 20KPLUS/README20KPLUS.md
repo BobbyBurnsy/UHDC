@@ -132,4 +132,5 @@ Currently, to use the UHDC, your Help Desk technicians must be members of the lo
 2. When the Help Desk user connects via the UHDC, WinRM spins up a temporary, virtual Administrator account just for that session.
 3. You define a JEA Role Capability file (.psrc) that explicitly dictates exactly which cmdlets the Help Desk is allowed to run (e.g., Restart-Service, Get-WinEvent). If they try to run Format-Volume, JEA blocks it.
 
+
 Implementing JEA is a massive infrastructure project, but it is the gold standard for securing platforms like the UHDC in Fortune 500 environments.
