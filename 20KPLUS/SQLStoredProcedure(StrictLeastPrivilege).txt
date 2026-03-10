@@ -15,4 +15,5 @@ BEGIN
     WHEN NOT MATCHED THEN
         INSERT (Username, ComputerName, IPAddress, MACAddress, LastSeen)
         VALUES (@Username, @ComputerName, @IPAddress, @MACAddress, @LastSeen);
+
 END
