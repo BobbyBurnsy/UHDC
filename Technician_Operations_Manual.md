@@ -84,4 +84,5 @@ The UHDC is engineered for maximum reliability. When you click a tool, you may n
 1. **WinRM (Primary):** The console always attempts to use Windows Remote Management first. It is lightning-fast and highly secure.
 2. **PsExec (Fallback):** If the target computer's firewall is blocking WinRM, or if the machine is severely locked up, the UHDC will automatically encode your command and deploy it via PsExec. This bypasses the firewall and executes the command as the `SYSTEM` account, guaranteeing the fix goes through.
 
+
 If both methods fail, the computer is either completely offline, disconnected from the VPN, or experiencing a catastrophic hardware failure.
