@@ -81,4 +81,5 @@ To populate the `UserHistory.json` database, you must deploy the telemetry agent
    * `TenantDomain`: Your primary Microsoft 365 domain (e.g., `acmecorp.com`). *This enforces the cross-tenant security boundary.*
    * `ImportantGroups`: An array of AD group keywords you want highlighted in the UI (e.g., `["VPN", "Admin"]`).
    * `Trainees`: An array of junior technician usernames (e.g., `["jsmith", "tjones"]`). *Users in this list are permanently locked into the Interactive Training Engine.*
+
 5. Restart the console. The platform is now live.
