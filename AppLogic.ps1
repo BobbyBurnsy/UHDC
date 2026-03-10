@@ -1,18 +1,16 @@
 <#
 .SYNOPSIS
-    Unified Help Desk Console (UHDC) - HTML/API Engine (AppLogic.ps1)
+    Unified Help Desk Console (UHDC) - API Gateway
 #>
 
 $ErrorActionPreference = "Stop"
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host " [UHDC] MICRO-API ENGINE INITIALIZING" -ForegroundColor Cyan
+Write-Host " [UHDC] API GATEWAY INITIALIZING" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 
-# ------------------------------------------------------------------
-# 1. PREREQUISITE FOLDER CHECKS
-# ------------------------------------------------------------------
+# --- Ensure required directories exist ---
 $RequiredFolders = @("Core", "Tools", "Logs", "Config", "TelemetryDrop")
 foreach ($Folder in $RequiredFolders) {
     $FolderPath = Join-Path $ScriptRoot $Folder
@@ -22,12 +20,10 @@ foreach ($Folder in $RequiredFolders) {
     }
 }
 
-# ------------------------------------------------------------------
-# 2. CONFIG.JSON AUTO-GENERATION
-# ------------------------------------------------------------------
+# --- Initialize default configuration ---
 $ConfigPath = Join-Path $ScriptRoot "Config\config.json"
 if (-not (Test-Path $ConfigPath)) {
-    Write-Host "[!] First run detected! Generating default config.json..." -ForegroundColor Yellow
+    Write-Host "[!] First run detected. Generating default config.json..." -ForegroundColor Yellow
 
     $Template = [ordered]@{
         Organization = @{
@@ -49,17 +45,14 @@ if (-not (Test-Path $ConfigPath)) {
     Pause; exit
 }
 
-# Load Configuration
 $Global:Config = Get-Content $ConfigPath -Raw | ConvertFrom-Json
 $Global:TenantDomain = $Global:Config.Organization.TenantDomain
 Write-Host "[OK] Configuration loaded for $($Global:Config.Organization.CompanyName)" -ForegroundColor Green
 
-# ------------------------------------------------------------------
-# 3. PSEXEC AUTO-DOWNLOAD
-# ------------------------------------------------------------------
+# --- Download PsExec if missing ---
 $psExecPath = Join-Path $ScriptRoot "Core\psexec.exe"
 if (-not (Test-Path $psExecPath)) {
-    Write-Host "[i] PsExec.exe missing. Downloading from Microsoft Sysinternals..." -ForegroundColor Cyan
+    Write-Host "[i] PsExec.exe missing. Downloading from Sysinternals..." -ForegroundColor Cyan
     try {
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         Invoke-WebRequest -Uri "https://live.sysinternals.com/psexec.exe" -OutFile $psExecPath -UseBasicParsing -ErrorAction Stop
@@ -70,9 +63,7 @@ if (-not (Test-Path $psExecPath)) {
     }
 }
 
-# ------------------------------------------------------------------
-# 4. START WEB SERVER & ORPHAN CLEANUP
-# ------------------------------------------------------------------
+# --- Initialize HTTP Listener ---
 $Port = 5050
 $Url = "http://localhost:$Port/"
 $HttpListener = New-Object System.Net.HttpListener
@@ -81,10 +72,9 @@ $HttpListener.Prefixes.Add($Url)
 try {
     $HttpListener.Start()
 } catch {
-    Write-Host "[!] Port $Port is in use. Cleaning up orphaned UHDC processes..." -ForegroundColor Yellow
+    Write-Host "[!] Port $Port is in use. Cleaning up orphaned processes..." -ForegroundColor Yellow
     $currentPID = $PID
 
-    # Hunt down any other powershell.exe instances specifically running AppLogic.ps1
     Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" | 
         Where-Object { $_.CommandLine -match "AppLogic.ps1" -and $_.ProcessId -ne $currentPID } | 
         ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
@@ -93,9 +83,9 @@ try {
     $HttpListener.Start()
 }
 
-Write-Host "[UHDC] Micro-API Engine Started on Port $Port" -ForegroundColor Cyan
+Write-Host "[UHDC] API Gateway Started on Port $Port" -ForegroundColor Cyan
 
-# Pre-load Identity Module
+# --- Pre-load Identity Module ---
 Write-Host "[UHDC] Pre-loading Identity Module..." -ForegroundColor DarkGray
 try {
     . (Join-Path $ScriptRoot "Core\IdentityMenu.ps1")
@@ -106,6 +96,7 @@ try {
 Write-Host "[UHDC] Rendering HTML Interface..." -ForegroundColor Cyan
 Start-Process "msedge.exe" -ArgumentList "--app=$Url"
 
+# --- Main Request Loop ---
 try {
     while ($HttpListener.IsListening) {
         $Context = $HttpListener.GetContext()
@@ -128,7 +119,7 @@ try {
             $Response.OutputStream.Write($Buffer, 0, $Buffer.Length)
         }
 
-		# --- REMOTE ACCESS LAUNCHER ---
+        # --- Remote Access Launcher ---
         elseif ($Request.Url.AbsolutePath -eq "/api/remote/connect" -and $Request.HttpMethod -eq "POST") {
             $StreamReader = New-Object System.IO.StreamReader $Request.InputStream
             $RequestBody = $StreamReader.ReadToEnd() | ConvertFrom-Json
@@ -136,7 +127,6 @@ try {
             $TargetPC = $RequestBody.TargetPC
 
             Write-Host ">>> Launching $Method against $TargetPC..." -ForegroundColor Yellow
-
             $ResponseObj = @{ status = "success"; message = "" }
 
             try {
@@ -148,7 +138,7 @@ try {
                             $ResponseObj.message = "SCCM CmRcViewer launched for $TargetPC."
                         } else {
                             $ResponseObj.status = "error"
-                            $ResponseObj.message = "CmRcViewer.exe not found. Is the SCCM Admin Console installed locally?"
+                            $ResponseObj.message = "CmRcViewer.exe not found."
                         }
                     }
                     "MSRA" {
@@ -162,12 +152,12 @@ try {
                             $ResponseObj.message = "TeamViewer launched targeting $TargetPC."
                         } else {
                             $ResponseObj.status = "error"
-                            $ResponseObj.message = "TeamViewer.exe not found in standard directory."
+                            $ResponseObj.message = "TeamViewer.exe not found."
                         }
                     }
                     "CShare" {
                         Start-Process "explorer.exe" -ArgumentList "\\$TargetPC\c$"
-                        $ResponseObj.message = "Opened hidden C$ administrative share for $TargetPC."
+                        $ResponseObj.message = "Opened C$ share for $TargetPC."
                     }
                 }
             } catch {
@@ -181,14 +171,13 @@ try {
             $Response.OutputStream.Write($Buffer, 0, $Buffer.Length)
         }
 
-        # --- FETCH TRAINING DATA ---
+        # --- Fetch Training Data ---
         elseif ($Request.Url.AbsolutePath -eq "/api/tools/training" -and $Request.HttpMethod -eq "POST") {
             $StreamReader = New-Object System.IO.StreamReader $Request.InputStream
             $RequestBody = $StreamReader.ReadToEnd() | ConvertFrom-Json
             $ScriptName = $RequestBody.Script
             $ExtraArgs = $RequestBody.ExtraArgs
 
-            # Check both Tools and Core folders for the script
             $ScriptPath = Join-Path $ScriptRoot "Tools\$ScriptName"
             if (-not (Test-Path $ScriptPath)) { $ScriptPath = Join-Path $ScriptRoot "Core\$ScriptName" }
 
@@ -214,7 +203,7 @@ try {
             $Response.OutputStream.Write($Buffer, 0, $Buffer.Length)
         }
 
-        # --- EXECUTE TOOL (Dynamic Routing) ---
+        # --- Execute Tool ---
         elseif ($Request.Url.AbsolutePath -eq "/api/tools/execute" -and $Request.HttpMethod -eq "POST") {
             $StreamReader = New-Object System.IO.StreamReader $Request.InputStream
             $RequestBody = $StreamReader.ReadToEnd() | ConvertFrom-Json
@@ -226,22 +215,19 @@ try {
 
             $ResponseObj = @{ status = "error"; message = ""; output = "" }
 
-            # Prevent Path Traversal (Must be alphanumeric + .ps1)
+            # Input Validation
             if ($ScriptName -notmatch "^[a-zA-Z0-9_-]+\.ps1$") {
-                $ResponseObj.message = "SECURITY ALERT: Invalid script name format."
+                $ResponseObj.message = "Invalid script name format."
                 Write-Host "[!] Path Traversal Attempt Blocked: $ScriptName" -ForegroundColor Red
                 goto SendResponse
             }
 
-            # Prevent Command Injection on Target Hostname
-            # Allows alphanumeric, hyphens, periods, and commas (for mass deploy)
             if (-not [string]::IsNullOrWhiteSpace($TargetPC) -and $TargetPC -notmatch "^[a-zA-Z0-9_.,-]+$") {
-                $ResponseObj.message = "SECURITY ALERT: Invalid characters in Target PC name."
+                $ResponseObj.message = "Invalid characters in Target PC name."
                 Write-Host "[!] Command Injection Attempt Blocked: $TargetPC" -ForegroundColor Red
                 goto SendResponse
             }
 
-            # Check both Tools and Core folders
             $ScriptPath = Join-Path $ScriptRoot "Tools\$ScriptName"
             if (-not (Test-Path $ScriptPath)) { $ScriptPath = Join-Path $ScriptRoot "Core\$ScriptName" }
 
@@ -280,13 +266,13 @@ try {
             $Response.OutputStream.Write($Buffer, 0, $Buffer.Length)
         }
 
-        # --- AD INTELLIGENCE SEARCH ---
+        # --- AD Intelligence Search ---
         elseif ($Request.Url.AbsolutePath -eq "/api/identity/search" -and $Request.HttpMethod -eq "POST") {
             $StreamReader = New-Object System.IO.StreamReader $Request.InputStream
             $RequestBody = $StreamReader.ReadToEnd() | ConvertFrom-Json
             $Query = $RequestBody.Query
 
-            Write-Host ">>> Executing Identity & Asset Correlation for $Query..." -ForegroundColor Yellow
+            Write-Host ">>> Executing Identity Correlation for $Query..." -ForegroundColor Yellow
             $ScriptPath = Join-Path $ScriptRoot "Core\IdentityAssetCorrelation.ps1"
 
             if (Test-Path $ScriptPath) {
@@ -308,7 +294,7 @@ try {
             $Response.OutputStream.Write($Buffer, 0, $Buffer.Length)
         }
 
-        # --- AD IDENTITY ACTIONS ---
+        # --- AD Identity Actions ---
         elseif ($Request.Url.AbsolutePath -eq "/api/identity/action" -and $Request.HttpMethod -eq "POST") {
             $StreamReader = New-Object System.IO.StreamReader $Request.InputStream
             $RequestBody = $StreamReader.ReadToEnd() | ConvertFrom-Json
@@ -316,7 +302,6 @@ try {
             $TargetUser = $RequestBody.TargetUser
 
             Write-Host ">>> Executing $Action on $TargetUser..." -ForegroundColor Yellow
-
             $ResponseObj = @{ status = "success"; message = "" }
 
             try {
@@ -341,15 +326,14 @@ try {
             $Response.OutputStream.Write($Buffer, 0, $Buffer.Length)
         }
 
-        # --- FIRE & FORGET BACKGROUND TASKS ---
+        # --- Background Task Dispatcher ---
         elseif ($Request.Url.AbsolutePath -eq "/api/tools/background" -and $Request.HttpMethod -eq "POST") {
             $StreamReader = New-Object System.IO.StreamReader $Request.InputStream
             $RequestBody = $StreamReader.ReadToEnd() | ConvertFrom-Json
             $ScriptName = $RequestBody.Script
 
             $ScriptPath = Join-Path $ScriptRoot "Core\$ScriptName"
-
-            Write-Host ">>> Spawning detached background engine: $ScriptName..." -ForegroundColor Magenta
+            Write-Host ">>> Spawning background process: $ScriptName..." -ForegroundColor Magenta
 
             $ResponseObj = @{ status = "error"; message = "" }
 
@@ -359,7 +343,7 @@ try {
                     Start-Process "powershell.exe" -ArgumentList $ArgsList
 
                     $ResponseObj.status = "success"
-                    $ResponseObj.message = "$ScriptName launched in the background. You can continue working."
+                    $ResponseObj.message = "$ScriptName launched in the background."
                 } catch {
                     $ResponseObj.message = "Failed to launch background process."
                 }
@@ -372,16 +356,16 @@ try {
             $Response.ContentType = "application/json"
             $Response.OutputStream.Write($Buffer, 0, $Buffer.Length)
         }
-		
-		        # --- GRACEFUL SHUTDOWN ROUTE ---
+
+        # --- Graceful Shutdown ---
         elseif ($Request.Url.AbsolutePath -eq "/api/system/shutdown" -and $Request.HttpMethod -eq "POST") {
-            Write-Host ">>> Shutdown signal received from UI. Terminating engine..." -ForegroundColor Yellow
+            Write-Host ">>> Shutdown signal received. Terminating engine..." -ForegroundColor Yellow
             $Response.StatusCode = 200
             $Response.Close()
             $HttpListener.Stop()
-            break # Breaks the infinite while loop, allowing the script to exit cleanly
+            break 
         }
-		
+
         else { $Response.StatusCode = 404 }
 
         $Response.Close()
