@@ -10,9 +10,7 @@
 $ErrorActionPreference = "Continue"
 $Global:GraphConnected = $false
 
-# ------------------------------------------------------------------------
-# 1. DEFINE DELEGATED PERMISSIONS (RBAC)
-# ------------------------------------------------------------------------
+# --- Define Delegated Permissions ---
 $GraphScopes = @(
     "User.ReadWrite.All",
     "UserAuthenticationMethod.ReadWrite.All", 
@@ -21,9 +19,7 @@ $GraphScopes = @(
 
 Write-Host ">>> [IDENTITY] Verifying Microsoft.Graph module..." -ForegroundColor DarkGray
 
-# ------------------------------------------------------------------------
-# 2. DEPENDENCY INJECTION & CONNECTION (GRACEFUL FALLBACK)
-# ------------------------------------------------------------------------
+# --- Dependency Injection & Connection ---
 try {
     if (-not (Get-Module -ListAvailable -Name Microsoft.Graph.Authentication)) {
         Write-Host "[!] Microsoft.Graph module is missing. Cloud Identity features will be disabled." -ForegroundColor Yellow
@@ -32,12 +28,8 @@ try {
         Write-Host "[!] Microsoft.Graph.Identity module is missing. Cloud Identity features will be disabled." -ForegroundColor Yellow
     }
     else {
-        # Attempt connection (Will prompt for login on the server console on first run)
         Connect-MgGraph -Scopes $GraphScopes -NoWelcome -ErrorAction Stop
 
-        # ------------------------------------------------------------------------
-        # 3. THE "ZERO TRUST" BOUNDARY CHECK
-        # ------------------------------------------------------------------------
         $CurrentContext = Get-MgContext
         $TechUPN = $CurrentContext.Account
 
@@ -56,10 +48,7 @@ catch {
     Write-Host "[!] Graph API Authentication Failed or Cancelled. Cloud features will be disabled." -ForegroundColor Yellow
 }
 
-# ========================================================================
-# 4. CORE ACTION FUNCTIONS (Called by AppLogic.ps1 API Routes)
-# ========================================================================
-
+# --- Core Action Functions ---
 function Reset-UHDCPassword {
     param([string]$TargetUPN)
 
