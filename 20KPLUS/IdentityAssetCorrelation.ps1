@@ -24,9 +24,7 @@ param(
 
 $ErrorActionPreference = "Continue"
 
-# ====================================================================
-# TRAINING DATA EXPORT (For Web UI Modal)
-# ====================================================================
+# --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
         StepName = "IDENTITY & ASSET CORRELATION (SQL EDITION)"
@@ -38,14 +36,8 @@ if ($GetTrainingData) {
     return
 }
 
-# ====================================================================
-# BULLETPROOF CONFIG LOADER
-# ====================================================================
-$ImportantGroups = @("VPN", "Admin", "M365", "License", "Remote") # Fallback defaults
-
-# [!] ENTERPRISE SQL CONFIGURATION
-# Replace this with your actual SQL Server details. 
-# Integrated Security=True ensures the technician's AD account is used for access.
+# --- Load Configuration ---
+$ImportantGroups = @("VPN", "Admin", "M365", "License", "Remote")
 $SqlConnectionString = "Server=tcp:YOUR-SQL-SERVER,1433;Initial Catalog=UHDCTelemetry;Integrated Security=True;Encrypt=True;TrustServerCertificate=True;"
 
 if ([string]::IsNullOrWhiteSpace($SharedRoot)) {
@@ -71,9 +63,7 @@ if ([string]::IsNullOrWhiteSpace($SharedRoot)) {
 
 if ([string]::IsNullOrWhiteSpace($TargetUser)) { return }
 
-# ====================================================================
-# PHASE 1: SQL DATABASE QUERY (High Performance)
-# ====================================================================
+# --- SQL Database Query ---
 $userHistory = @()
 $computerHistory = @()
 $dbStatus = "OK"
@@ -83,7 +73,6 @@ try {
     $SqlConnection.ConnectionString = $SqlConnectionString
     $SqlConnection.Open()
 
-    # Query 1: Search by Username (Get top 5 most recent PCs)
     $SqlCmdUser = $SqlConnection.CreateCommand()
     $SqlCmdUser.CommandText = "SELECT TOP 5 Username, ComputerName, LastSeen FROM AssetTelemetry WHERE Username = @Target ORDER BY LastSeen DESC"
     $SqlCmdUser.Parameters.AddWithValue("@Target", $TargetUser) | Out-Null
@@ -98,7 +87,6 @@ try {
     }
     $ReaderUser.Close()
 
-    # Query 2: Search by ComputerName (If the tech searched a PC instead of a User)
     if ($userHistory.Count -eq 0) {
         $SqlCmdComp = $SqlConnection.CreateCommand()
         $SqlCmdComp.CommandText = "SELECT TOP 5 Username, ComputerName, LastSeen FROM AssetTelemetry WHERE ComputerName = @Target ORDER BY LastSeen DESC"
@@ -120,24 +108,18 @@ try {
     $dbStatus = "SQL ERROR: $($_.Exception.Message)"
 }
 
-# ====================================================================
-# PHASE 2: ACTIVE DIRECTORY QUERY
-# ====================================================================
+# --- Active Directory Query ---
 $adObj = $null
-
 try {
     $adObj = Get-ADUser -Identity $TargetUser -Properties Office, Title, Department, EmailAddress, PasswordLastSet, LastLogonDate, LockedOut, Enabled, MemberOf, PasswordNeverExpires -ErrorAction Stop
 } catch {}
 
-# ====================================================================
-# PHASE 3: CALCULATIONS & GROUP PARSING
-# ====================================================================
+# --- Process Data ---
 $expiryDate = "N/A"; $daysLeftStr = "N/A"
 $matchedGroups = @()
 $standardGroupCount = 0
 
 if ($adObj) {
-    # Password Expiry Calculation
     if ($adObj.PasswordNeverExpires) {
         $expiryDate = "Never (Exempt)"; $daysLeftStr = "Infinite"
     } else {
@@ -157,7 +139,6 @@ if ($adObj) {
         } catch { $expiryDate = "Unknown" }
     }
 
-    # AD Group Parsing
     if ($adObj.MemberOf) {
         foreach ($dn in $adObj.MemberOf) {
             $cn = if ($dn -match "^CN=([^,]+)") { $matches[1] } else { $dn }
@@ -173,9 +154,7 @@ if ($adObj) {
     }
 }
 
-# ====================================================================
-# PHASE 4: JSON API RESPONSE (For Web UI KPI Cards)
-# ====================================================================
+# --- JSON Output (Web UI) ---
 if ($AsJson) {
     $res = @{ Status = "error"; Message = "No matching user or computer found."; Type = "none" }
 
@@ -203,9 +182,7 @@ if ($AsJson) {
     return
 }
 
-# ====================================================================
-# PHASE 5: HTML TELEMETRY OUTPUT (Fallback)
-# ====================================================================
+# --- HTML Output (Fallback) ---
 if ($adObj) {
     $statusColor = if ($adObj.Enabled) { "#2ecc71" } else { "#7f8c8d" }
     $statusText  = if ($adObj.Enabled) { "Active" } else { "DISABLED" }
@@ -232,7 +209,6 @@ if ($adObj) {
     $html += "<div style='color: $expColor; font-weight: bold; font-size: 0.95rem;'>Expiry: $daysLeftStr</div>"
     $html += "</div>"
 
-    # --- INJECT AD GROUPS ---
     $html += "<div style='border-top: 1px solid #334155; padding-top: 10px; margin-bottom: 12px;'>"
     $html += "<div style='color: #f8fafc; font-weight: bold; font-size: 0.95rem; margin-bottom: 6px;'><i class='fa-solid fa-users'></i> Key Access Groups</div>"
 
@@ -249,7 +225,6 @@ if ($adObj) {
     }
     $html += "</div>"
 
-    # --- INJECT SQL LOCATIONS ---
     $html += "<div style='border-top: 1px solid #334155; padding-top: 10px;'>"
     $html += "<div style='color: #f8fafc; font-weight: bold; font-size: 0.95rem; margin-bottom: 6px;'><i class='fa-solid fa-location-dot'></i> Known Locations (SQL)</div>"
 
