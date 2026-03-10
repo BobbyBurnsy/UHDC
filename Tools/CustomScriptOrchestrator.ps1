@@ -5,7 +5,6 @@
     Acts as a backend controller for the Custom Script Library UI.
     Reads custom .ps1 scripts from a network share and executes them remotely
     in memory, capturing the output. Supports single and mass deployments.
-    Attempts WinRM first, falls back to PsExec Base64 execution.
 #>
 
 param(
@@ -18,7 +17,6 @@ param(
     [Parameter(Mandatory=$false)]
     [string]$SharedRoot,
 
-    # --- EXTRA ARGS FROM WEB UI ---
     [Parameter(Mandatory=$false)]
     [string]$Action = "Execute",
 
@@ -37,13 +35,11 @@ param(
 
 $ErrorActionPreference = "Continue"
 
-# ====================================================================
-# TRAINING DATA EXPORT
-# ====================================================================
+# --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
         StepName = "CUSTOM SCRIPT ORCHESTRATOR"
-        Description = "We read the custom script from the network share into memory, convert it into a ScriptBlock, and dispatch it to the target(s) via WinRM. This bypasses the 'Double-Hop' authentication issue and allows us to capture the script's actual output. If WinRM is blocked, we Base64-encode the script and execute it via PsExec as SYSTEM."
+        Description = "We read the custom script from the network share into memory, convert it into a ScriptBlock, and dispatch it to the target(s) via WinRM. This bypasses the 'Double-Hop' authentication issue and allows us to capture the script's actual output."
         Code = "`$Payload = Get-Content `$ScriptPath -Raw`nInvoke-Command -ComputerName `$Target -ScriptBlock ([scriptblock]::Create(`$Payload))"
         InPerson = "Copying a .ps1 file to a flash drive, walking to the user's desk, opening PowerShell as Administrator, and running the script manually."
     }
@@ -51,9 +47,7 @@ if ($GetTrainingData) {
     return
 }
 
-# ====================================================================
-# LIBRARY MANAGEMENT FUNCTIONS
-# ====================================================================
+# --- Library Management ---
 $LibraryFile = Join-Path -Path $SharedRoot -ChildPath "Core\ScriptLibrary.json"
 
 function Load-Lib {
@@ -77,9 +71,7 @@ function Save-Lib {
     $d | ConvertTo-Json -Depth 2 | Set-Content $LibraryFile -Force
 }
 
-# ====================================================================
-# MODE ROUTING: UI LIBRARY MANAGEMENT
-# ====================================================================
+# --- UI Library Management ---
 if ($Action -eq "GetLibrary") {
     $lib = Load-Lib
     $lib | ConvertTo-Json -Depth 2 | Write-Output
@@ -92,7 +84,6 @@ if ($Action -eq "AddScript") {
     $lib += [PSCustomObject]@{ ID=$newID; Name=$ScriptName.Trim(); Path=$ScriptPath.Trim() }
     Save-Lib $lib
 
-    # Sanitize output for UI
     $SafeScriptName = $ScriptName.Trim() -replace '<', '&lt;' -replace '>', '&gt;'
     Write-Output "[UHDC] [+] Added '$SafeScriptName' to the Custom Script Library."
     return
@@ -106,27 +97,22 @@ if ($Action -eq "DeleteScript") {
     return
 }
 
-# ====================================================================
-# CORE EXECUTION: SINGLE & MASS DEPLOY
-# ====================================================================
+# --- Main Execution ---
 if ($Action -eq "Execute") {
 
     if ([string]::IsNullOrWhiteSpace($Target)) { Write-Output "[!] ERROR: Target PC(s) required."; return }
     if (-not (Test-Path $ScriptPath)) { Write-Output "[!] ERROR: Cannot read script at $ScriptPath. Verify path and permissions."; return }
 
-    # [CRITICAL FIX] Sanitize ScriptName for HTML output to prevent XSS
+    # Sanitize ScriptName for HTML output
     $SafeScriptName = $ScriptName -replace '<', '&lt;' -replace '>', '&gt;'
 
-    # Read the script into memory
     $PayloadString = Get-Content $ScriptPath -Raw
     $PayloadBlock = [scriptblock]::Create($PayloadString)
 
     $TargetArray = @($Target -split ',' | ForEach-Object { $_.Trim() } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
     $psExecPath = Join-Path -Path $SharedRoot -ChildPath "Core\psexec.exe"
 
-    # ----------------------------------------------------------------
-    # SCENARIO A: SINGLE TARGET
-    # ----------------------------------------------------------------
+    # --- Single Target Execution ---
     if ($TargetArray.Count -eq 1) {
         $SingleTarget = $TargetArray[0]
         Write-Output "========================================"
@@ -161,9 +147,7 @@ if ($Action -eq "Execute") {
         return
     }
 
-    # ----------------------------------------------------------------
-    # SCENARIO B: MASS DEPLOYMENT
-    # ----------------------------------------------------------------
+    # --- Mass Execution ---
     Write-Output "========================================"
     Write-Output "[UHDC] MASS SCRIPT EXECUTION"
     Write-Output "========================================"
@@ -204,7 +188,6 @@ if ($Action -eq "Execute") {
         }
     }
 
-    # Generate HTML Summary Report
     $TotalSuccess = $SuccessWinRM.Count + $SuccessPsExec.Count
     $html = "<div style='background: #1e293b; padding: 16px; border-radius: 8px; border-left: 4px solid #9b59b6; margin-top: 15px; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); font-family: system-ui, sans-serif;'>"
     $html += "<div style='color: #f8fafc; font-weight: bold; font-size: 1.1rem; margin-bottom: 12px;'><i class='fa-solid fa-scroll'></i> Mass Script Execution Report</div>"
