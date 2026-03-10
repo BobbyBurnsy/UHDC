@@ -4,9 +4,6 @@
 .DESCRIPTION
     Remotely queries the target computer's registry to compile a list of installed software.
     Supports partial keyword matching. Bypasses the slow Win32_Product WMI class.
-    Attempts WinRM first. If blocked by firewall, falls back to a Base64-encoded
-    payload executed via PsExec as SYSTEM.
-    Outputs a styled HTML table for the web dashboard.
 #>
 
 param(
@@ -14,13 +11,13 @@ param(
     [string]$Target,
 
     [Parameter(Mandatory=$false, Position=1)]
-    [string]$TargetUser, # Unused here, but passed by AppLogic
+    [string]$TargetUser,
 
     [Parameter(Mandatory=$false)]
     [string]$SharedRoot,
 
     [Parameter(Mandatory=$false)]
-    [string]$Keyword, # Passed via ExtraArgs from the Web UI
+    [string]$Keyword,
 
     [Parameter(Mandatory=$false)]
     [switch]$GetTrainingData
@@ -28,13 +25,11 @@ param(
 
 $ErrorActionPreference = "Continue"
 
-# ====================================================================
-# TRAINING DATA EXPORT (For Web UI Modal)
-# ====================================================================
+# --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
         StepName = "SOFTWARE INVENTORY AUDIT"
-        Description = "We establish a remote WinRM session to query the target's registry. We specifically avoid the 'Win32_Product' WMI class because it is incredibly slow and triggers MSI reconfigurations. Instead, we rapidly read the 64-bit and 32-bit 'Uninstall' registry hives to pull the exact Display Name, Version, and Publisher. If the local firewall blocks WinRM, we automatically fall back to PsExec, passing a Base64-encoded PowerShell payload to safely extract the inventory as the SYSTEM account."
+        Description = "We establish a remote WinRM session to query the target's registry. We specifically avoid the 'Win32_Product' WMI class because it is incredibly slow and triggers MSI reconfigurations. Instead, we rapidly read the 64-bit and 32-bit 'Uninstall' registry hives to pull the exact Display Name, Version, and Publisher."
         Code = "try { `$json = Invoke-Command -ComputerName `$Target -ScriptBlock `$Payload } catch { `$json = psexec.exe \\`$Target -s powershell.exe -EncodedCommand `$Base64 }"
         InPerson = "Opening the Control Panel, navigating to 'Programs and Features' (appwiz.cpl), and scrolling through the list of installed applications."
     }
@@ -42,9 +37,7 @@ if ($GetTrainingData) {
     return
 }
 
-# ====================================================================
-# CORE EXECUTION
-# ====================================================================
+# --- Main Execution ---
 Write-Output "========================================"
 Write-Output "[UHDC] SOFTWARE INVENTORY AUDIT"
 Write-Output "========================================"
@@ -54,7 +47,6 @@ if ([string]::IsNullOrWhiteSpace($Target)) {
     return 
 }
 
-# 1. Fast Ping Check
 if (-not (Test-Connection -ComputerName $Target -Count 1 -Quiet)) {
     Write-Output "[!] Offline. $Target is not responding to ping."
     return
@@ -62,12 +54,10 @@ if (-not (Test-Connection -ComputerName $Target -Count 1 -Quiet)) {
 
 $ActionLog = if ($Keyword) { "Software Audit Executed (Keyword: $Keyword)" } else { "Software Audit Executed (Full)" }
 
-# 2. Define the core payload to extract software data as a JSON string
 $PayloadString = @"
     `$ErrorActionPreference = 'SilentlyContinue'
     `$Keyword = '$Keyword'
 
-    # Define the 64-bit and 32-bit registry paths
     `$paths = @(
         'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*',
         'HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*'
@@ -81,7 +71,6 @@ $PayloadString = @"
         `$installed = `$installed | Where-Object { `$_.DisplayName -match `$Keyword -or `$_.Publisher -match `$Keyword }
     }
 
-    # Deduplicate and sort
     `$installed = `$installed | Sort-Object DisplayName -Unique
 
     `$results = @()
@@ -95,7 +84,6 @@ $PayloadString = @"
         }
     }
 
-    # Compress to a single line and wrap in delimiters for safe extraction
     `$json = @(`$results) | ConvertTo-Json -Compress
     Write-Output `"---JSON_START---`$json---JSON_END---`"
 "@
@@ -104,7 +92,6 @@ $PayloadBlock = [scriptblock]::Create($PayloadString)
 $RawOutputString = $null
 $MethodUsed = "WinRM"
 
-# 3. Execute Remote Query
 try {
     Write-Output "[i] Attempting connection to $Target via WinRM..."
     $RawOutputString = Invoke-Command -ComputerName $Target -ErrorAction Stop -ScriptBlock $PayloadBlock | Out-String
@@ -123,7 +110,6 @@ try {
             $ActionLog += " [PsExec Fallback]"
         } catch {
             Write-Output "`n[!] FATAL ERROR: Both WinRM and PsExec failed."
-            Write-Output "    Details: $($_.Exception.Message)"
             return
         }
     } else {
@@ -132,7 +118,6 @@ try {
     }
 }
 
-# 4. Process Data and Generate HTML
 if ($RawOutputString -match '---JSON_START---(.*?)---JSON_END---') {
     try {
         $appData = $matches[1] | ConvertFrom-Json
@@ -141,20 +126,13 @@ if ($RawOutputString -match '---JSON_START---(.*?)---JSON_END---') {
         if ($appData.Count -gt 0) {
             Write-Output "`n[UHDC SUCCESS] Found $($appData.Count) installed applications via $MethodUsed."
 
-            # Build the HTML Payload
             $html = "<div style='margin-top: 15px; margin-bottom: 15px; max-height: 400px; overflow-y: auto; border: 1px solid #334155; border-radius: 8px; background: #0f172a; box-shadow: 0 4px 6px rgba(0,0,0,0.2);'>"
             $html += "<table style='width: 100%; border-collapse: collapse; font-family: system-ui, sans-serif; font-size: 0.85rem; text-align: left;'>"
-
-            # Table Header (Sticky)
             $html += "<thead style='position: sticky; top: 0; background: #1e293b; color: #38bdf8; box-shadow: 0 2px 4px rgba(0,0,0,0.5);'>"
-            $html += "<tr>"
-            $html += "<th style='padding: 10px; border-bottom: 2px solid #334155; width: 50%;'>Application Name</th>"
-            $html += "<th style='padding: 10px; border-bottom: 2px solid #334155; width: 20%;'>Version</th>"
-            $html += "<th style='padding: 10px; border-bottom: 2px solid #334155; width: 30%;'>Publisher</th>"
-            $html += "</tr></thead><tbody>"
+            $html += "<tr><th style='padding: 10px; border-bottom: 2px solid #334155; width: 50%;'>Application Name</th><th style='padding: 10px; border-bottom: 2px solid #334155; width: 20%;'>Version</th><th style='padding: 10px; border-bottom: 2px solid #334155; width: 30%;'>Publisher</th></tr></thead><tbody>"
 
             foreach ($app in $appData) {
-                # [CRITICAL FIX] Sanitize HTML inputs to prevent XSS injections from malicious registry keys
+                # Sanitize HTML inputs
                 $safeName = $app.Name -replace '<', '&lt;' -replace '>', '&gt;'
                 $safeVersion = $app.Version -replace '<', '&lt;' -replace '>', '&gt;'
                 $safePublisher = $app.Publisher -replace '<', '&lt;' -replace '>', '&gt;'
@@ -167,11 +145,8 @@ if ($RawOutputString -match '---JSON_START---(.*?)---JSON_END---') {
             }
 
             $html += "</tbody></table></div>"
-
-            # Output the raw HTML directly into the telemetry stream
             Write-Output $html
 
-            # --- AUDIT LOG INJECTION ---
             if (-not [string]::IsNullOrWhiteSpace($SharedRoot)) {
                 $AuditHelper = Join-Path -Path $SharedRoot -ChildPath "Core\Helper_AuditLog.ps1"
                 if (Test-Path $AuditHelper) {
