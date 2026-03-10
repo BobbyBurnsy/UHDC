@@ -2,12 +2,9 @@
 .SYNOPSIS
     UHDC Web-Ready Core: GlobalNetworkMap.ps1
 .DESCRIPTION
-    A powerful background scanner that compiles a master map of
-    User-to-Computer relationships. It scans Active Directory for all enabled
-    Windows 10/11 workstations, pings them to check availability, and queries
-    the currently logged-on user. It updates the central 'UserHistory.json'
-    database in "Additive Mode," ensuring that new detections are added without
-    overwriting existing history for users who utilize multiple devices.
+    A background scanner that compiles a master map of User-to-Computer relationships. 
+    It scans Active Directory for enabled Windows 10/11 workstations, pings them, 
+    and queries the currently logged-on user. Updates the central database in Additive Mode.
 #>
 
 param(
@@ -20,23 +17,19 @@ param(
 
 $ErrorActionPreference = "Continue"
 
-# ====================================================================
-# TRAINING DATA EXPORT (For Web UI Modal)
-# ====================================================================
+# --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
         StepName = "GLOBAL NETWORK MAPPER"
-        Description = "This engine sweeps Active Directory for all enabled Windows 10/11 workstations. It pings each machine and uses WMI to identify the currently logged-on user. It then compiles this data into a central JSON database using an 'Additive' composite key (User-Computer) to track users across multiple devices without overwriting their history. It uses an atomic save operation every 50 endpoints to prevent database corruption."
-        Code = "`$computers = Get-ADComputer -Filter `$filter`nforeach (`$pc in `$computers) {`n    `$user = (Get-CimInstance Win32_ComputerSystem -ComputerName `$pc).UserName`n    `$masterDB[`"`$user-`$pc`"] = `$entry`n}`n# Atomic Save to .tmp then rename to .json"
+        Description = "This engine sweeps Active Directory for all enabled Windows 10/11 workstations. It pings each machine and uses WMI to identify the currently logged-on user. It then compiles this data into a central JSON database using a composite key (User-Computer) to track users across multiple devices."
+        Code = "`$computers = Get-ADComputer -Filter `$filter`nforeach (`$pc in `$computers) {`n    `$user = (Get-CimInstance Win32_ComputerSystem -ComputerName `$pc).UserName`n    `$masterDB[`"`$user-`$pc`"] = `$entry`n}`n# Save to .tmp then rename to .json"
         InPerson = "Walking the floor, going desk to desk, wiggling the mouse on every active computer, writing down the username displayed on the lock screen, and updating a master Excel spreadsheet."
     }
     $data | ConvertTo-Json | Write-Output
     return
 }
 
-# ====================================================================
-# BULLETPROOF CONFIG LOADER
-# ====================================================================
+# --- Load Configuration ---
 if ([string]::IsNullOrWhiteSpace($SharedRoot)) {
     try {
         $ScriptDir = Split-Path -Path $MyInvocation.MyCommand.Path
@@ -63,16 +56,13 @@ Write-Output "========================================="
 Write-Output "[!] Scope limited to: Active Windows 10/11 Workstations"
 Write-Output "[!] Mode: Additive (Preserves History)"
 
-# ==============================================================================
-# 1. LOAD EXISTING DATABASE (With Composite Key)
-# ==============================================================================
+# --- Load Existing Database ---
 $masterDB = @{}
 $initialCount = 0
 
 if (Test-Path $HistoryFile) {
     Write-Output "`n[1/3] Loading Database..."
 
-    # CRITICAL FIX: Only backup if the file is healthy (>100 bytes).
     if ((Get-Item $HistoryFile).Length -gt 100) {
         Copy-Item -Path $HistoryFile -Destination $BackupFile -Force
     }
@@ -82,7 +72,6 @@ if (Test-Path $HistoryFile) {
         if ($raw -isnot [System.Array]) { $raw = @($raw) }
 
         foreach ($entry in $raw) {
-            # The Key is "User-Computer" to prevent overwriting PC1 with PC2
             if ($entry.User -and $entry.Computer) {
                 $uniqueKey = "$($entry.User)-$($entry.Computer)"
                 $masterDB[$uniqueKey] = $entry
@@ -96,13 +85,10 @@ if (Test-Path $HistoryFile) {
     }
 }
 
-# ==============================================================================
-# 2. GET COMPUTERS (Universal Workstation Filter)
-# ==============================================================================
+# --- Fetch Computer List ---
 Write-Output "`n[2/3] Fetching Computer List from AD..."
 
 try {
-    # Targets Win10/Win11 instead of specific Company PC Names
     $filter = "Enabled -eq 'true' -and (OperatingSystem -like '*Windows 10*' -or OperatingSystem -like '*Windows 11*')"
     $computers = Get-ADComputer -Filter $filter -Properties OperatingSystem | Select-Object -ExpandProperty Name
 } catch {
@@ -119,9 +105,7 @@ if ($total -eq 0) {
 Write-Output " > [OK] Found $total target workstations."
 Start-Sleep 2
 
-# ==============================================================================
-# 3. SCAN LOOP
-# ==============================================================================
+# --- Scan Loop ---
 $count = 0
 $newFinds = 0
 $updatedFinds = 0
@@ -132,32 +116,25 @@ foreach ($pc in $computers) {
     $count++
     $percent = "{0:N0}" -f (($count / $total) * 100)
 
-    # UI Heartbeat
     if ($count % 100 -eq 0) {
         Write-Output " > Scan in progress... ($percent% complete)"
     }
 
-    # Fast Ping Test
     if (Test-Connection -ComputerName $pc -Count 1 -Quiet) {
         try {
-            # Quick WMI Query
             $compInfo = Get-CimInstance -ClassName Win32_ComputerSystem -ComputerName $pc -ErrorAction Stop
             $rawUser = $compInfo.UserName
 
             if ($rawUser) {
                 $cleanUser = ($rawUser -split "\\")[-1].Trim()
                 $timeStamp = (Get-Date).ToString("yyyy-MM-dd HH:mm")
-
-                # Create the Unique Key
                 $scanKey = "$cleanUser-$pc"
 
                 if ($masterDB.ContainsKey($scanKey)) {
-                    # --- UPDATE EXISTING ENTRY ---
                     $masterDB[$scanKey].LastSeen = $timeStamp
                     $updatedFinds++
                 }
                 else {
-                    # --- ADD NEW ENTRY ---
                     $masterDB[$scanKey] = [PSCustomObject]@{
                         User     = $cleanUser
                         Computer = $pc
@@ -165,14 +142,12 @@ foreach ($pc in $computers) {
                         Source   = "GlobalMap"
                     }
                     $newFinds++
-
                     Write-Output "[$percent%] NEW: $cleanUser found on $pc"
                 }
             }
         } catch {}
     }
 
-    # --- ATOMIC AUTO-SAVE (Every 50 items) ---
     if ($count % 50 -eq 0) {
         if ($masterDB.Count -ge $initialCount -and $masterDB.Count -gt 0) {
             try {
@@ -188,24 +163,16 @@ foreach ($pc in $computers) {
     }
 }
 
-# ==============================================================================
-# 4. FINAL ATOMIC SAVE
-# ==============================================================================
+# --- Final Save ---
 Write-Output "`n[!] Finalizing Database..."
 
-# Final Safety Check: Database should create NEW records, never shrink.
 if ($masterDB.Count -ge $initialCount -and $masterDB.Count -gt 0) {
     try {
         $finalList = @($masterDB.Values | Sort-Object User)
-
-        # 1. Convert to JSON in memory first
         $jsonOutput = ConvertTo-Json -InputObject $finalList -Depth 3 -ErrorAction Stop
         if ([string]::IsNullOrWhiteSpace($jsonOutput)) { throw "Generated JSON string was completely empty." }
 
-        # 2. Write to Temp file
         Set-Content -Path $TempFile -Value $jsonOutput -Force -ErrorAction Stop
-
-        # 3. Swap Temp for Live
         Move-Item -Path $TempFile -Destination $HistoryFile -Force -ErrorAction Stop
 
         Write-Output "`n[UHDC SUCCESS] Map Complete!"
