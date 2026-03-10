@@ -9,29 +9,24 @@
 
 $ErrorActionPreference = "Stop"
 
-# ==============================================================================
-# 1. CREATE LOCAL AGENT DIRECTORY
-# ==============================================================================
+# --- Create Local Agent Directory ---
 $AgentDir = "C:\ProgramData\UHDC"
 if (-not (Test-Path $AgentDir)) {
     New-Item -Path $AgentDir -ItemType Directory -Force | Out-Null
 }
 
-# ==============================================================================
-# 2. WRITE THE TELEMETRY PAYLOAD
-# ==============================================================================
+# --- Write Telemetry Payload ---
 $PayloadPath = Join-Path $AgentDir "UHDC_Telemetry.ps1"
 
-# [!] IMPORTANT: Change this to your actual Write-Only Drop Share path
+# Update this to your actual Write-Only Drop Share path
 $PayloadScript = @'
 $ErrorActionPreference = "SilentlyContinue"
 $DropShare = "\\YOUR-SERVER\TelemetryDrop$" 
 
-# Gather Intel (Using CIM to get the actual logged-in user even though task runs as SYSTEM)
 $ComputerName = $env:COMPUTERNAME
 $LoggedInUser = (Get-CimInstance -ClassName Win32_ComputerSystem).UserName
 if ($LoggedInUser) { $LoggedInUser = $LoggedInUser.Split('\')[-1] } else { $LoggedInUser = "Unknown" }
-# Grab the active IP and MAC Address
+
 $ActiveAdapter = Get-NetAdapter | Where-Object Status -eq 'Up' | Sort-Object InterfaceMetric | Select-Object -First 1
 $ActiveIP = (Get-NetIPAddress -InterfaceAlias $ActiveAdapter.Name -AddressFamily IPv4 | Where-Object IPAddress -notmatch '^169\.254\.|127\.0\.0\.1').IPAddress | Select-Object -First 1
 
@@ -40,12 +35,11 @@ if ($ActiveIP -and $LoggedInUser -ne "Unknown") {
         User        = $LoggedInUser
         Computer    = $ComputerName
         IPAddress   = $ActiveIP
-        MACAddress  = $ActiveAdapter.MacAddress # NEW: Harvest the MAC!
+        MACAddress  = $ActiveAdapter.MacAddress
         LastSeen    = (Get-Date).ToString("yyyy-MM-dd HH:mm")
         Source      = "Event-Agent"
     }
 
-    # Write to the Drop Share. (We use a temp GUID name to prevent file lock collisions)
     $OutFile = Join-Path $DropShare "$ComputerName-$([guid]::NewGuid().ToString().Substring(0,8)).json"
     $Payload | ConvertTo-Json -Compress | Out-File -FilePath $OutFile -Encoding UTF8 -Force
 }
@@ -53,12 +47,9 @@ if ($ActiveIP -and $LoggedInUser -ne "Unknown") {
 
 $PayloadScript | Out-File -FilePath $PayloadPath -Encoding UTF8 -Force
 
-# ==============================================================================
-# 3. BUILD & REGISTER EVENT-DRIVEN SCHEDULED TASK
-# ==============================================================================
+# --- Register Event-Driven Scheduled Task ---
 $TaskName = "UHDC Global Asset Telemetry"
 
-# XML Definition for Event ID 10000 (Network Connected) running as SYSTEM
 $TaskXML = @"
 <?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
