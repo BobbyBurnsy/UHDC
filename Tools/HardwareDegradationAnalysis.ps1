@@ -4,8 +4,6 @@
 .DESCRIPTION
     Queries the raw WMI/CIM battery classes to extract exact milliwatt-hour (mWh) metrics. 
     It calculates the degradation percentage and outputs a styled HTML payload.
-    Attempts WinRM first. If blocked by firewall, falls back to a Base64-encoded
-    payload executed via PsExec as SYSTEM.
 #>
 
 param(
@@ -13,7 +11,7 @@ param(
     [string]$Target,
 
     [Parameter(Mandatory=$false, Position=1)]
-    [string]$TargetUser, # Passed by AppLogic, but unused in this specific script
+    [string]$TargetUser,
 
     [Parameter(Mandatory=$false)]
     [string]$SharedRoot,
@@ -24,13 +22,11 @@ param(
 
 $ErrorActionPreference = "Continue"
 
-# ====================================================================
-# TRAINING DATA EXPORT (For Web UI Modal)
-# ====================================================================
+# --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
         StepName = "HARDWARE DEGRADATION ANALYSIS"
-        Description = "Instead of generating a clunky HTML file, we establish a remote WinRM session to query the raw WMI/CIM classes ('BatteryStaticData' and 'BatteryFullChargedCapacity'). We extract the exact milliwatt-hour (mWh) metrics, calculate the degradation percentage, and render a graphical health bar directly in the console. If the local firewall blocks WinRM, we automatically fall back to PsExec, passing a Base64-encoded PowerShell payload to safely extract the telemetry as the SYSTEM account."
+        Description = "Instead of generating a clunky HTML file, we establish a remote WinRM session to query the raw WMI/CIM classes ('BatteryStaticData' and 'BatteryFullChargedCapacity'). We extract the exact milliwatt-hour (mWh) metrics, calculate the degradation percentage, and render a graphical health bar directly in the console."
         Code = "try { `$json = Invoke-Command -ComputerName `$Target -ScriptBlock `$Payload } catch { `$json = psexec.exe \\`$Target -s powershell.exe -EncodedCommand `$Base64 }"
         InPerson = "Opening an elevated Command Prompt, typing 'powercfg /batteryreport', opening the generated HTML file, and manually doing the math between Design Capacity and Full Charge Capacity."
     }
@@ -38,9 +34,7 @@ if ($GetTrainingData) {
     return
 }
 
-# ====================================================================
-# CORE EXECUTION
-# ====================================================================
+# --- Main Execution ---
 Write-Output "========================================"
 Write-Output "[UHDC] HARDWARE DEGRADATION ANALYSIS"
 Write-Output "========================================"
@@ -50,7 +44,6 @@ if ([string]::IsNullOrWhiteSpace($Target)) {
     return 
 }
 
-# 1. Fast Ping Check
 if (-not (Test-Connection -ComputerName $Target -Count 1 -Quiet)) {
     Write-Output "[!] Offline. $Target is not responding to ping."
     return
@@ -58,11 +51,9 @@ if (-not (Test-Connection -ComputerName $Target -Count 1 -Quiet)) {
 
 $ActionLog = "Hardware Degradation Analysis Executed"
 
-# 2. Define the core payload to extract battery data as a JSON string
 $PayloadString = @"
     `$ErrorActionPreference = 'SilentlyContinue'
 
-    # Query the hidden root\wmi namespace for raw battery metrics
     `$static = Get-CimInstance -Namespace root\wmi -ClassName BatteryStaticData
     `$full = Get-CimInstance -Namespace root\wmi -ClassName BatteryFullChargedCapacity
 
@@ -75,7 +66,6 @@ $PayloadString = @"
         }
     }
 
-    # Compress to a single line and wrap in delimiters for safe extraction
     `$json = @(`$results) | ConvertTo-Json -Compress
     Write-Output `"---JSON_START---`$json---JSON_END---`"
 "@
@@ -84,7 +74,6 @@ $PayloadBlock = [scriptblock]::Create($PayloadString)
 $RawOutputString = $null
 $MethodUsed = "WinRM"
 
-# 3. Execute Remote Query
 try {
     Write-Output "[i] Attempting connection to $Target via WinRM..."
     $RawOutputString = Invoke-Command -ComputerName $Target -ErrorAction Stop -ScriptBlock $PayloadBlock | Out-String
@@ -95,18 +84,14 @@ try {
     $psExecPath = Join-Path -Path $SharedRoot -ChildPath "Core\psexec.exe"
     if (Test-Path $psExecPath) {
         try {
-            # Safely encode the payload to Base64 for PS 5.1 execution
             $Bytes = [System.Text.Encoding]::Unicode.GetBytes($PayloadString)
             $EncodedCommand = [Convert]::ToBase64String($Bytes)
 
             $ArgsList = "/accepteula \\$Target -s powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $EncodedCommand"
-
-            # Capture output and filter out PsExec banner noise
             $RawOutputString = & $psExecPath $ArgsList 2>&1 | Out-String
             $ActionLog += " [PsExec Fallback]"
         } catch {
             Write-Output "`n[!] FATAL ERROR: Both WinRM and PsExec failed."
-            Write-Output "    Details: $($_.Exception.Message)"
             return
         }
     } else {
@@ -115,62 +100,43 @@ try {
     }
 }
 
-# 4. Process Data and Generate HTML
 if ($RawOutputString -match '---JSON_START---(.*?)---JSON_END---') {
     try {
         $batteryData = $matches[1] | ConvertFrom-Json
-
-        # Ensure it's an array even if only one battery was found
         if ($batteryData -isnot [System.Array]) { $batteryData = @($batteryData) }
 
         if ($batteryData.Count -gt 0) {
             Write-Output "`n[UHDC SUCCESS] Battery telemetry retrieved via $MethodUsed!`n"
 
-            # Build the HTML Payload
             $html = "<div style='display: flex; flex-direction: column; gap: 12px; margin-top: 10px; margin-bottom: 10px;'>"
 
             foreach ($bat in $batteryData) {
                 $design = $bat.Design
                 $full = $bat.Full
 
-                # Prevent divide by zero errors on corrupted batteries
                 if ($design -eq 0) { $design = 1 }
 
                 $healthPct = [math]::Round(($full / $design) * 100, 1)
-                if ($healthPct -gt 100) { $healthPct = 100 } # Cap at 100% for display
+                if ($healthPct -gt 100) { $healthPct = 100 }
 
-                # Determine color based on health degradation
-                $barColor = "#2ecc71" # Green (Healthy)
-                if ($healthPct -lt 75) { $barColor = "#f1c40f" } # Yellow (Degraded)
-                if ($healthPct -lt 50) { $barColor = "#e74c3c" } # Red (Replace)
+                $barColor = "#2ecc71"
+                if ($healthPct -lt 75) { $barColor = "#f1c40f" }
+                if ($healthPct -lt 50) { $barColor = "#e74c3c" }
 
                 $html += "<div style='background: #1e293b; padding: 16px; border-radius: 8px; border-left: 4px solid $barColor; box-shadow: 0 4px 6px rgba(0,0,0,0.2); font-family: system-ui, sans-serif;'>"
                 $html += "<div style='color: #f8fafc; font-weight: bold; margin-bottom: 12px; font-size: 1.1rem;'><i class='fa-solid fa-battery-half'></i> Hardware Battery Health</div>"
-
                 $html += "<div style='display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.9rem;'>"
-                $html += "<span style='color: #94a3b8;'>Design Capacity:</span>"
-                $html += "<span style='color: #f8fafc;'>$($design.ToString('N0')) mWh</span>"
-                $html += "</div>"
-
+                $html += "<span style='color: #94a3b8;'>Design Capacity:</span><span style='color: #f8fafc;'>$($design.ToString('N0')) mWh</span></div>"
                 $html += "<div style='display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.9rem;'>"
-                $html += "<span style='color: #94a3b8;'>Full Charge Capacity:</span>"
-                $html += "<span style='color: #f8fafc;'>$($full.ToString('N0')) mWh</span>"
-                $html += "</div>"
-
+                $html += "<span style='color: #94a3b8;'>Full Charge Capacity:</span><span style='color: #f8fafc;'>$($full.ToString('N0')) mWh</span></div>"
                 $html += "<div style='width: 100%; background: #0f172a; border-radius: 6px; height: 10px; overflow: hidden; margin-bottom: 8px;'>"
-                $html += "<div style='width: $($healthPct)%; background: $barColor; height: 100%; border-radius: 6px;'></div>"
-                $html += "</div>"
-
-                $html += "<div style='text-align: right; color: $barColor; font-weight: bold; font-size: 0.95rem;'>$healthPct% Health</div>"
-                $html += "</div>"
+                $html += "<div style='width: $($healthPct)%; background: $barColor; height: 100%; border-radius: 6px;'></div></div>"
+                $html += "<div style='text-align: right; color: $barColor; font-weight: bold; font-size: 0.95rem;'>$healthPct% Health</div></div>"
             }
 
             $html += "</div>"
-
-            # Output the raw HTML directly into the telemetry stream
             Write-Output $html
 
-            # --- AUDIT LOG INJECTION ---
             if (-not [string]::IsNullOrWhiteSpace($SharedRoot)) {
                 $AuditHelper = Join-Path -Path $SharedRoot -ChildPath "Core\Helper_AuditLog.ps1"
                 if (Test-Path $AuditHelper) {
@@ -182,7 +148,6 @@ if ($RawOutputString -match '---JSON_START---(.*?)---JSON_END---') {
         }
     } catch {
         Write-Output "`n[!] ERROR: Failed to parse battery data JSON."
-        Write-Output "    Details: $($_.Exception.Message)"
     }
 } else {
     Write-Output "`n[!] ERROR: No valid battery data returned from target. (Is this a desktop PC?)"
