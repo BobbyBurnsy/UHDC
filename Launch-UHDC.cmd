@@ -2,7 +2,7 @@
 TITLE UHDC - Unified Help Desk Console
 COLOR 0B
 
-:: 1. Check for Administrator Privileges
+:: --- 1. Check for Administrator Privileges ---
 :: (Required to start the local web server, modify local firewall, and run PsExec)
 net session >nul 2>&1
 if %errorLevel% == 0 (
@@ -14,7 +14,7 @@ if %errorLevel% == 0 (
 )
 
 :AdminConfirmed
-:: 2. Map UNC paths and change to the script directory
+:: --- 2. Map UNC paths and change to the script directory ---
 :: (pushd is critical here because cmd.exe does not support UNC paths natively)
 pushd "%~dp0"
 
@@ -25,7 +25,7 @@ echo  Engineered for Enterprise IT
 echo =======================================================
 echo.
 
-:: 3. Verify Core Engine Exists
+:: --- 3. Verify Core Engine Exists ---
 if not exist "AppLogic.ps1" (
     COLOR 0C
     echo [!] FATAL ERROR: AppLogic.ps1 not found.
@@ -38,9 +38,11 @@ echo [i] Initializing Micro-API Engine...
 echo [i] Please leave this window open. Closing it will terminate the console.
 echo.
 
-:: 4. Launch the PowerShell Engine (Bypassing local execution policies)
+:: --- 4. Launch the PowerShell Engine ---
+:: (Bypassing local execution policies)
 powershell.exe -ExecutionPolicy Bypass -NoProfile -File "AppLogic.ps1"
 
-:: 5. Cleanup and Exit (If the engine crashes or is closed)
+:: --- 5. Cleanup and Exit ---
+:: (If the engine crashes or is closed)
 popd
 pause
