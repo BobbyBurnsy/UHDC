@@ -5,4 +5,5 @@ CREATE TABLE AssetTelemetry (
     MACAddress VARCHAR(50),
     LastSeen DATETIME,
     PRIMARY KEY (Username, ComputerName)
+
 );
