@@ -14,28 +14,22 @@ Write-Output "======================================================="
 Write-Output " [UHDC] DEPLOYING SQL TELEMETRY AGENT"
 Write-Output "======================================================="
 
-# ==============================================================================
-# 1. CREATE LOCAL AGENT DIRECTORY
-# ==============================================================================
+# --- Create Local Agent Directory ---
 $AgentDir = "C:\ProgramData\UHDC"
 if (-not (Test-Path $AgentDir)) {
     Write-Output "[+] Creating local agent directory..."
     New-Item -Path $AgentDir -ItemType Directory -Force | Out-Null
 }
 
-# ==============================================================================
-# 2. WRITE THE SQL TELEMETRY PAYLOAD
-# ==============================================================================
+# --- Write SQL Telemetry Payload ---
 $PayloadPath = Join-Path $AgentDir "UHDC_Telemetry_SQL.ps1"
 
-# [!] IMPORTANT: Change the Server and Initial Catalog to match your environment.
+# Update Server and Initial Catalog to match your environment
 $PayloadScript = @'
 $ErrorActionPreference = "SilentlyContinue"
 
-# Enterprise SQL Configuration (Integrated Security uses the SYSTEM/Computer Account)
 $SqlConnectionString = "Server=tcp:YOUR-SQL-SERVER,1433;Initial Catalog=UHDCTelemetry;Integrated Security=True;Encrypt=True;TrustServerCertificate=True;"
 
-# Gather Endpoint Telemetry
 $ComputerName = $env:COMPUTERNAME
 $LoggedInUser = (Get-CimInstance -ClassName Win32_ComputerSystem).UserName
 if ($LoggedInUser) { $LoggedInUser = $LoggedInUser.Split('\')[-1] } else { $LoggedInUser = "Unknown" }
@@ -45,7 +39,6 @@ $ActiveIP = (Get-NetIPAddress -InterfaceAlias $ActiveAdapter.Name -AddressFamily
 
 if ($ActiveIP -and $LoggedInUser -ne "Unknown") {
 
-    # Construct Parameterized MERGE (Upsert) Query to prevent SQL Injection
     $SqlQuery = @"
         MERGE INTO AssetTelemetry AS target
         USING (SELECT @User AS Username, @Computer AS ComputerName, @IP AS IPAddress, @MAC AS MACAddress, @Seen AS LastSeen) AS source
@@ -57,7 +50,6 @@ if ($ActiveIP -and $LoggedInUser -ne "Unknown") {
             VALUES (source.Username, source.ComputerName, source.IPAddress, source.MACAddress, source.LastSeen);
 "@
 
-    # Execute SQL Command
     $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
     $SqlConnection.ConnectionString = $SqlConnectionString
     $SqlConnection.Open()
@@ -65,7 +57,6 @@ if ($ActiveIP -and $LoggedInUser -ne "Unknown") {
     $SqlCmd = $SqlConnection.CreateCommand()
     $SqlCmd.CommandText = $SqlQuery
 
-    # Bind Parameters
     $SqlCmd.Parameters.AddWithValue("@User", $LoggedInUser) | Out-Null
     $SqlCmd.Parameters.AddWithValue("@Computer", $ComputerName) | Out-Null
     $SqlCmd.Parameters.AddWithValue("@IP", $ActiveIP) | Out-Null
@@ -80,14 +71,11 @@ if ($ActiveIP -and $LoggedInUser -ne "Unknown") {
 Write-Output "[+] Writing SQL payload to disk..."
 $PayloadScript | Out-File -FilePath $PayloadPath -Encoding UTF8 -Force
 
-# ==============================================================================
-# 3. BUILD & REGISTER EVENT-DRIVEN SCHEDULED TASK
-# ==============================================================================
+# --- Register Event-Driven Scheduled Task ---
 $TaskName = "UHDC Global Asset Telemetry (SQL)"
 
 Write-Output "[+] Registering Event 10000 Scheduled Task..."
 
-# XML Definition for Event ID 10000 (Network Connected) running as SYSTEM
 $TaskXML = @"
 <?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
