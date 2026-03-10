@@ -2,9 +2,7 @@
 .SYNOPSIS
     UHDC Web-Ready Core: Helper_AuditLog.ps1
 .DESCRIPTION
-    The central logging engine for the UHDC platform. It accepts 
-    parameters for the Target PC and the Action performed, grabs the executing 
-    technician's username ($env:USERNAME), and appends a timestamped record 
+    The central logging engine for the UHDC platform. Appends a timestamped record 
     to the central ConsoleAudit.csv file for security and usage tracking.
     Includes a retry loop to prevent data loss during concurrent writes.
 #>
@@ -16,9 +14,7 @@ param(
     [string]$SharedRoot
 )
 
-# ------------------------------------------------------------------
-# BULLETPROOF CONFIG LOADER
-# ------------------------------------------------------------------
+# --- Load Configuration ---
 if ([string]::IsNullOrWhiteSpace($SharedRoot)) {
     try {
         $ScriptDir = Split-Path -Path $MyInvocation.MyCommand.Path
@@ -36,9 +32,7 @@ if ([string]::IsNullOrWhiteSpace($SharedRoot)) {
     }
 }
 
-# ------------------------------------------------------------------
-# WRITE TO UNIFIED CSV LOG (WITH CONCURRENCY PROTECTION)
-# ------------------------------------------------------------------
+# --- Write to Audit Log ---
 $LogFolder = Join-Path -Path $SharedRoot -ChildPath "Logs"
 if (-not (Test-Path $LogFolder)) { New-Item -ItemType Directory -Path $LogFolder -Force | Out-Null }
 
@@ -57,18 +51,15 @@ $Success = $false
 
 while ($RetryCount -lt $MaxRetries) {
     try {
-        # -ErrorAction Stop is required here so the catch block triggers on a file lock
         $newEntry | Export-Csv -Path $LogFile -Append -NoTypeInformation -Force -ErrorAction Stop
         $Success = $true
-        break # Success, exit the retry loop
+        break
     } catch {
         $RetryCount++
-        # Random backoff prevents two colliding threads from retrying at the exact same time
         Start-Sleep -Milliseconds (Get-Random -Minimum 100 -Maximum 500)
     }
 }
 
 if (-not $Success) {
-    # Changed to Write-Output so the Web UI catches the error if the CSV is permanently locked
-    Write-Output "[!] Failed to write to audit log after $MaxRetries attempts. File may be locked by another process."
+    Write-Output "[!] Failed to write to audit log after $MaxRetries attempts. File may be locked."
 }
