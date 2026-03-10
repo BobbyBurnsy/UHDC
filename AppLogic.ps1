@@ -226,14 +226,14 @@ try {
 
             $ResponseObj = @{ status = "error"; message = ""; output = "" }
 
-            # [SECURITY PATCH] 1. Prevent Path Traversal (Must be alphanumeric + .ps1)
+            # Prevent Path Traversal (Must be alphanumeric + .ps1)
             if ($ScriptName -notmatch "^[a-zA-Z0-9_-]+\.ps1$") {
                 $ResponseObj.message = "SECURITY ALERT: Invalid script name format."
                 Write-Host "[!] Path Traversal Attempt Blocked: $ScriptName" -ForegroundColor Red
                 goto SendResponse
             }
 
-            # [SECURITY PATCH] 2. Prevent Command Injection on Target Hostname
+            # Prevent Command Injection on Target Hostname
             # Allows alphanumeric, hyphens, periods, and commas (for mass deploy)
             if (-not [string]::IsNullOrWhiteSpace($TargetPC) -and $TargetPC -notmatch "^[a-zA-Z0-9_.,-]+$") {
                 $ResponseObj.message = "SECURITY ALERT: Invalid characters in Target PC name."
@@ -391,3 +391,4 @@ finally {
     $HttpListener.Stop()
     $HttpListener.Close()
 }
+
