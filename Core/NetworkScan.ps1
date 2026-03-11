@@ -29,9 +29,9 @@ $ErrorActionPreference = "Continue"
 if ($GetTrainingData) {
     $data = @{
         StepName = "MULTI-VECTOR IDENTITY LOCATOR"
-        Description = "We are executing a 3-stage hunt to find where this user is physically logged in. First, we check our local UserHistory database. If they aren't there, we pivot to the Cloud, querying Microsoft Intune via Graph API for their assigned devices. If they are hot-desking on an unassigned kiosk, we fall back to Active Directory, pulling a list of computers in their specific Office/OU and sweeping them via WMI."
-        Code = "`$history = Get-Content UserHistory.json`n`$intune = Get-MgDeviceManagementManagedDevice -Filter `"userPrincipalName eq '`$UPN'`"`n`$ouSweep = Get-ADComputer -SearchBase `$UserOU"
-        InPerson = "Checking your personal notes, checking the cloud asset management portal, and finally walking the floor of their department to check every desk."
+        Description = "The UHDC automates a complex 3-stage hunt (Local DB -> Intune -> AD Subnet Sweep) to find a user. However, a junior technician must know how to manually check who is logged into a specific computer without relying on complex PowerShell scripts. Using the classic Windows Management Instrumentation Command-line (WMIC) utility, you can instantly query a remote PC from a standard command prompt to see exactly who is physically sitting at the keyboard."
+        Code = "wmic /node:`"TargetPC`" computersystem get username"
+        InPerson = "Checking your personal notes, checking the cloud asset management portal, and finally walking the floor of their department to check the lock screen of every active computer."
     }
     $data | ConvertTo-Json | Write-Output
     return
@@ -190,7 +190,4 @@ if ($foundPC) {
 
 } else {
     Write-Output "`n[!] Scan exhausted. User is either offline or on an unreachable subnet."
-}
-    Write-Output "`n[!] Scan exhausted. User is either offline or on an unreachable subnet."
-
 }
