@@ -58,9 +58,9 @@ function Send-MagicPacket {
 if ($GetTrainingData) {
     $data = @{
         StepName = "ZERO-TOUCH SOFTWARE DEPLOYMENT"
-        Description = "We establish a remote WinRM session to execute the installer directly from the network share using silent command-line switches. If multiple targets are provided, we use PowerShell's native parallel remoting to dispatch the command to all machines simultaneously. If the local firewall blocks WinRM, we automatically fall back to PsExec."
-        Code = "Invoke-Command -ComputerName `$TargetArray -ScriptBlock `$Payload -AsJob"
-        InPerson = "Walking desk to desk with a flash drive, or using an enterprise tool like MECM to push the package."
+        Description = "While the UHDC uses WMI and PowerShell runspaces to deploy software asynchronously, a junior technician should know how to push an installer manually. By utilizing Sysinternals PsExec, you can remotely execute an installer as the SYSTEM account. This bypasses the 'Double-Hop' authentication issue, allowing the target machine's computer account to pull the installer directly from a network share and install it silently in the background."
+        Code = "psexec \\`$Target -s msiexec.exe /i `"\\server\share\installer.msi`" /qn /norestart"
+        InPerson = "Walking desk to desk with a flash drive, copying the installer to the desktop, and clicking through the installation wizard. Alternatively, opening an elevated command prompt and typing the silent install command."
     }
     $data | ConvertTo-Json | Write-Output
     return
