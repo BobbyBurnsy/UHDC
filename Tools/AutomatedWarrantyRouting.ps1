@@ -26,8 +26,8 @@ $ErrorActionPreference = "Continue"
 if ($GetTrainingData) {
     $data = @{
         StepName = "AUTOMATED WARRANTY ROUTING"
-        Description = "We establish a remote WinRM session to query the target computer's motherboard (Win32_BIOS) for its embedded Serial Number, and the system enclosure (Win32_ComputerSystem) for the Manufacturer. We then use that data to dynamically generate a direct link to the vendor's warranty portal."
-        Code = "try { `$json = Invoke-Command -ComputerName `$Target -ScriptBlock `$Payload } catch { `$json = psexec.exe \\`$Target -s powershell.exe -EncodedCommand `$Base64 }"
+        Description = "While the UHDC uses PowerShell to query WMI and dynamically build the vendor's URL, a junior technician should know how to quickly grab a remote computer's serial number manually. By utilizing Sysinternals PsExec, you can remotely execute the classic 'wmic' command to instantly retrieve the BIOS serial number (Service Tag) without needing to physically flip the laptop over."
+        Code = "psexec \\`$Target wmic bios get serialnumber"
         InPerson = "Flipping the laptop over to read the printed sticker on the bottom chassis, opening a web browser, navigating to the vendor's support page, and manually typing the serial number."
     }
     $data | ConvertTo-Json | Write-Output
