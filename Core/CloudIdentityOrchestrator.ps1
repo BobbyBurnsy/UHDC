@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    UHDC Web-Ready Core: CloudIdentityOrchestrator.ps1
+    UHDC Web-Ready Core: IntuneEntraManager.ps1
 .DESCRIPTION
     A headless API router for Microsoft Intune and Entra ID management.
     Takes an Action parameter from the Web UI to retrieve devices, BitLocker keys,
@@ -35,7 +35,7 @@ $ErrorActionPreference = "Continue"
 # --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
-        StepName = "CLOUD IDENTITY ORCHESTRATOR"
+        StepName = "INTUNE & ENTRA MANAGER"
         Description = "Because this module interacts with Entra ID and Intune, there is no classic 'CMD' equivalent. The modern command-line for the Microsoft Cloud is the Graph API. While the UHDC automates the complex authentication and device correlation, a junior technician should know how to manually pull critical data, like a BitLocker recovery key, directly from a standard PowerShell terminal using the Microsoft.Graph module."
         Code = "Get-MgInformationProtectionBitlockerRecoveryKey -Filter `"deviceId eq '<AzureAD-Device-ID>'`""
         InPerson = "Logging into the Microsoft Endpoint Manager (Intune) web portal, searching for the user or device, navigating to the 'Recovery Keys' tab, and copying the 48-digit key."
