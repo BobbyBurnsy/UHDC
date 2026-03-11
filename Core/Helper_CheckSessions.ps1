@@ -27,9 +27,9 @@ $ErrorActionPreference = "Continue"
 if ($GetTrainingData) {
     $data = @{
         StepName = "QUERY ACTIVE USER SESSIONS"
-        Description = "We are querying the remote computer to see who is physically logged in at the keyboard (via WMI) and who is connected remotely in the background (via the 'quser' command). If the firewall blocks the standard RPC query, we automatically deploy PsExec to bypass the block."
-        Code = "`$comp = Get-CimInstance Win32_ComputerSystem -ComputerName `$Target`n`$quserOutput = quser /server:`$Target 2>&1"
-        InPerson = "Walking up to the computer, wiggling the mouse to see who is locked on the screen, and opening Task Manager -> Users tab to see background sessions."
+        Description = "While the UHDC uses WMI and RPC queries in the background, a junior technician should know how to check active user sessions manually. By utilizing Sysinternals PsExec, you can remotely execute the native 'quser' (Query User) command. This bypasses standard RPC firewall blocks and instantly returns a list of all active and disconnected sessions on the target machine."
+        Code = "psexec \\`$Target quser"
+        InPerson = "Walking up to the computer, wiggling the mouse to see who is locked on the screen, and opening Task Manager -> Users tab to see background sessions. Alternatively, opening a local command prompt and typing 'quser'."
     }
     $data | ConvertTo-Json | Write-Output
     return
