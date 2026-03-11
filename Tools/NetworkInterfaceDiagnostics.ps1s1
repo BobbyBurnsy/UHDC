@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    UHDC Web-Ready Tool: ActiveInterfaceDiagnostics.ps1
+    UHDC Web-Ready Tool: NetworkInterfaceDiagnostics.ps1
 .DESCRIPTION
     Remotely queries the target for active network adapters (Status=Up).
     It filters out loopback/APIPA addresses and correlates IPv4 addresses with
@@ -26,7 +26,7 @@ $ErrorActionPreference = "Continue"
 # --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
-        StepName = "ACTIVE INTERFACE DIAGNOSTICS"
+        StepName = "NETWORK INTERFACE DIAGNOSTICS"
         Description = "While the UHDC uses PowerShell to filter out disconnected adapters and APIPA addresses for a clean UI, a junior technician should know how to quickly check a remote machine's IP configuration manually. By utilizing Sysinternals PsExec, you can remotely execute the classic 'ipconfig /all' command and pipe it to 'findstr' to instantly grab the active IPv4 addresses."
         Code = "psexec \\`$Target ipconfig /all | findstr `"IPv4`""
         InPerson = "Opening an elevated Command Prompt and typing 'ipconfig /all', or pressing Win+R, typing 'ncpa.cpl' (Network Connections), double-clicking the active adapter, and clicking 'Details...'."
@@ -37,7 +37,7 @@ if ($GetTrainingData) {
 
 # --- Main Execution ---
 Write-Output "========================================"
-Write-Output "[UHDC] ACTIVE INTERFACE DIAGNOSTICS"
+Write-Output "[UHDC] NETWORK INTERFACE DIAGNOSTICS"
 Write-Output "========================================"
 
 if ([string]::IsNullOrWhiteSpace($Target)) { 
@@ -50,7 +50,7 @@ if (-not (Test-Connection -ComputerName $Target -Count 1 -Quiet)) {
     return
 }
 
-$ActionLog = "Active Interface Diagnostics Executed"
+$ActionLog = "Network Interface Diagnostics Executed"
 
 $PayloadString = @"
     `$ErrorActionPreference = 'SilentlyContinue'
