@@ -27,9 +27,9 @@ $ErrorActionPreference = "Continue"
 if ($GetTrainingData) {
     $data = @{
         StepName = "ACTIVE INTERFACE DIAGNOSTICS"
-        Description = "We establish a remote WinRM session to query the target's active network adapters and IPv4 addresses. We filter out disconnected adapters, loopback addresses (127.0.0.1), and APIPA addresses (169.254.x.x), then correlate the valid IP to its physical MAC address and negotiated link speed."
-        Code = "try { `$json = Invoke-Command -ComputerName `$Target -ScriptBlock `$Payload } catch { `$json = psexec.exe \\`$Target -s powershell.exe -EncodedCommand `$Base64 }"
-        InPerson = "Open an elevated Command Prompt and type 'ipconfig /all', or press Win+R, type 'ncpa.cpl' (Network Connections), double-click the active adapter, and click 'Details...'."
+        Description = "While the UHDC uses PowerShell to filter out disconnected adapters and APIPA addresses for a clean UI, a junior technician should know how to quickly check a remote machine's IP configuration manually. By utilizing Sysinternals PsExec, you can remotely execute the classic 'ipconfig /all' command and pipe it to 'findstr' to instantly grab the active IPv4 addresses."
+        Code = "psexec \\`$Target ipconfig /all | findstr `"IPv4`""
+        InPerson = "Opening an elevated Command Prompt and typing 'ipconfig /all', or pressing Win+R, typing 'ncpa.cpl' (Network Connections), double-clicking the active adapter, and clicking 'Details...'."
     }
     $data | ConvertTo-Json | Write-Output
     return
