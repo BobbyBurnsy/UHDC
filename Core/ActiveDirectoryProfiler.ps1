@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    UHDC Web-Ready Core: IdentityAssetCorrelation.ps1
+    UHDC Web-Ready Core: ActiveDirectoryProfiler.ps1
 .DESCRIPTION
     The core intelligence engine for the AD User Intelligence panel.
     Queries Active Directory for account details, parses AD groups,
@@ -251,3 +251,4 @@ if ($adObj) {
     Write-Output $html
     Write-Output "[GUI:UPDATE_TARGET:$($computerHistory[0].Computer)]"
 }
+
