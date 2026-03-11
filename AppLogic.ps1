@@ -273,7 +273,9 @@ try {
             $Query = $RequestBody.Query
 
             Write-Host ">>> Executing Identity Correlation for $Query..." -ForegroundColor Yellow
-            $ScriptPath = Join-Path $ScriptRoot "Core\IdentityAssetCorrelation.ps1"
+
+            # UPDATED TO NEW SCRIPT NAME
+            $ScriptPath = Join-Path $ScriptRoot "Core\ActiveDirectoryProfiler.ps1"
 
             if (Test-Path $ScriptPath) {
                 try {
@@ -286,7 +288,7 @@ try {
                     $JsonResponse = (@{ Status = "error"; Message = "AD Query failed: $($_.Exception.Message)" } | ConvertTo-Json -Compress)
                 }
             } else {
-                $JsonResponse = (@{ Status = "error"; Message = "IdentityAssetCorrelation.ps1 not found." } | ConvertTo-Json -Compress)
+                $JsonResponse = (@{ Status = "error"; Message = "ActiveDirectoryProfiler.ps1 not found." } | ConvertTo-Json -Compress)
             }
 
             $Buffer = [System.Text.Encoding]::UTF8.GetBytes($JsonResponse)
