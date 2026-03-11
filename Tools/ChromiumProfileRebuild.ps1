@@ -27,8 +27,8 @@ $ErrorActionPreference = "Continue"
 if ($GetTrainingData) {
     $data = @{
         StepName = "CHROMIUM PROFILE REBUILD"
-        Description = "We execute a unified 4-step pipeline directly on the target machine: 1. Copying the user's Bookmarks to a safe temporary directory. 2. Forcefully terminating Chrome/Edge processes. 3. Deleting the corrupted AppData 'User Data' directories. 4. Recreating the folder structure and injecting the saved bookmarks back into place."
-        Code = "try { Invoke-Command -ComputerName `$Target -ScriptBlock `$Payload -ArgumentList `$TargetUser } catch { psexec.exe \\`$Target -s powershell.exe -EncodedCommand `$Base64 }"
+        Description = "While the UHDC uses a complex PowerShell pipeline to safely backup and restore the user's bookmarks during a reset, a junior technician should know how to forcefully wipe a corrupted application profile manually. By utilizing Sysinternals PsExec, you can remotely execute a chained CMD command to forcefully kill the frozen browser process using 'taskkill', and then completely delete the corrupted AppData directory using 'rmdir'."
+        Code = "psexec \\`$Target -s cmd.exe /c `"taskkill /F /IM chrome.exe & rmdir /S /Q `"C:\Users\`$TargetUser\AppData\Local\Google\Chrome\User Data`"`""
         InPerson = "Opening Task Manager to kill frozen browsers, navigating to %LocalAppData%, copying the Bookmarks file to the Desktop, deleting the 'User Data' folders manually, and pasting the Bookmarks file back into the new profile."
     }
     $data | ConvertTo-Json | Write-Output
