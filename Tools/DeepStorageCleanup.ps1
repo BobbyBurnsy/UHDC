@@ -1,8 +1,8 @@
 <#
 .SYNOPSIS
-    UHDC Web-Ready Tool: DeepStorageRemediation.ps1
+    UHDC Web-Ready Tool: DeepStorageCleanup.ps1
 .DESCRIPTION
-    A heavy-duty storage remediation tool. Calculates free space, silently clears 
+    A heavy-duty storage cleanup tool. Calculates free space, silently clears 
     the MECM (SCCM) cache, force-empties Windows Temp, all User Temp folders, 
     and the Recycle Bin. Recalculates free space to determine total data purged,
     then triggers a background Windows Disk Cleanup (cleanmgr /sagerun:1).
@@ -27,7 +27,7 @@ $ErrorActionPreference = "Continue"
 # --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
-        StepName = "DEEP STORAGE REMEDIATION"
+        StepName = "DEEP STORAGE CLEANUP"
         Description = "While the UHDC uses PowerShell to calculate exact bytes freed and dynamically loop through all user profiles, a junior technician should know how to forcefully clear system caches manually. By utilizing Sysinternals PsExec, you can remotely execute a chained CMD command as the SYSTEM account to wipe the Windows Temp folder, clear the SCCM cache, and trigger the native Windows Disk Cleanup utility in the background."
         Code = "psexec \\`$Target -s cmd.exe /c `"del /q /f /s C:\Windows\Temp\* & del /q /f /s C:\Windows\ccmcache\* & cleanmgr.exe /sagerun:1`""
         InPerson = "Opening Control Panel to clear the Configuration Manager cache, pressing Win+R to delete %temp% files, emptying the Recycle Bin, and running the Disk Cleanup utility."
@@ -38,7 +38,7 @@ if ($GetTrainingData) {
 
 # --- Main Execution ---
 Write-Output "========================================"
-Write-Output "[UHDC] DEEP STORAGE REMEDIATION"
+Write-Output "[UHDC] DEEP STORAGE CLEANUP"
 Write-Output "========================================"
 
 if ([string]::IsNullOrWhiteSpace($Target)) { 
@@ -51,7 +51,7 @@ if (-not (Test-Connection -ComputerName $Target -Count 1 -Quiet)) {
     return
 }
 
-$ActionLog = "Deep Storage Remediation Executed"
+$ActionLog = "Deep Storage Cleanup Executed"
 
 $PayloadString = @"
     `$ErrorActionPreference = 'SilentlyContinue'
@@ -134,7 +134,7 @@ if ($RawOutputString -match '---JSON_START---(.*?)---JSON_END---') {
             $displaySpace = "$([math]::Round($bytes / 1MB, 2)) MB"
         }
 
-        Write-Output "`n[UHDC SUCCESS] Deep Storage Remediation completed via $MethodUsed!"
+        Write-Output "`n[UHDC SUCCESS] Deep Storage Cleanup completed via $MethodUsed!"
 
         $html = "<div style='background: #1e293b; padding: 16px; border-radius: 8px; border-left: 4px solid #f1c40f; margin-top: 10px; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); font-family: system-ui, sans-serif;'>"
         $html += "<div style='color: #f8fafc; font-weight: bold; font-size: 1.1rem; margin-bottom: 12px;'><i class='fa-solid fa-broom'></i> Storage Recovery Report</div>"
