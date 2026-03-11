@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    UHDC Web-Ready Tool: AdvancedEventForensics.ps1
+    UHDC Web-Ready Tool: RemoteEventLogViewer.ps1
 .DESCRIPTION
     Remotely queries the System and Application event logs.
     If no keyword is provided, it pulls the last 25 Critical/Error events.
@@ -29,7 +29,7 @@ $ErrorActionPreference = "Continue"
 # --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
-        StepName = "ADVANCED EVENT FORENSICS"
+        StepName = "REMOTE EVENT LOG VIEWER"
         Description = "While the UHDC uses PowerShell to parse and format thousands of logs into a clean UI table, a junior technician should know how to pull event logs manually from the command line. By utilizing Sysinternals PsExec, you can remotely execute the native Windows Event Utility ('wevtutil') to instantly grab the latest system events in plain text without needing to open the slow Event Viewer GUI."
         Code = "psexec \\`$Target wevtutil qe System /c:10 /f:text /rd:true"
         InPerson = "Opening Event Viewer (eventvwr.msc), navigating to Windows Logs -> System, and filtering the log for Critical and Error events."
@@ -40,7 +40,7 @@ if ($GetTrainingData) {
 
 # --- Main Execution ---
 Write-Output "========================================"
-Write-Output "[UHDC] ADVANCED EVENT FORENSICS"
+Write-Output "[UHDC] REMOTE EVENT LOG VIEWER"
 Write-Output "========================================"
 
 if ([string]::IsNullOrWhiteSpace($Target)) { 
@@ -53,7 +53,7 @@ if (-not (Test-Connection -ComputerName $Target -Count 1 -Quiet)) {
     return
 }
 
-$ActionLog = if ($Keyword) { "Event Forensics Executed (Keyword: $Keyword)" } else { "Event Forensics Executed (Critical/Error)" }
+$ActionLog = if ($Keyword) { "Remote Event Log Viewer Executed (Keyword: $Keyword)" } else { "Remote Event Log Viewer Executed (Critical/Error)" }
 
 $LocalTemp = "C:\UHDC\Logs"
 if (-not (Test-Path $LocalTemp)) { New-Item -ItemType Directory -Path $LocalTemp -Force | Out-Null }
