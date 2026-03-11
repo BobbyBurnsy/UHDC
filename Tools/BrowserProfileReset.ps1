@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    UHDC Web-Ready Tool: ChromiumProfileRebuild.ps1
+    UHDC Web-Ready Tool: BrowserProfileReset.ps1
 .DESCRIPTION
     Completely resets Chrome and Edge browser profiles for a specific user on a remote machine.
     Safely backs up bookmarks to a local temp directory, kills browser processes, 
@@ -26,7 +26,7 @@ $ErrorActionPreference = "Continue"
 # --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
-        StepName = "CHROMIUM PROFILE REBUILD"
+        StepName = "BROWSER PROFILE RESET"
         Description = "While the UHDC uses a complex PowerShell pipeline to safely backup and restore the user's bookmarks during a reset, a junior technician should know how to forcefully wipe a corrupted application profile manually. By utilizing Sysinternals PsExec, you can remotely execute a chained CMD command to forcefully kill the frozen browser process using 'taskkill', and then completely delete the corrupted AppData directory using 'rmdir'."
         Code = "psexec \\`$Target -s cmd.exe /c `"taskkill /F /IM chrome.exe & rmdir /S /Q `"C:\Users\`$TargetUser\AppData\Local\Google\Chrome\User Data`"`""
         InPerson = "Opening Task Manager to kill frozen browsers, navigating to %LocalAppData%, copying the Bookmarks file to the Desktop, deleting the 'User Data' folders manually, and pasting the Bookmarks file back into the new profile."
@@ -37,11 +37,11 @@ if ($GetTrainingData) {
 
 # --- Main Execution ---
 Write-Output "========================================"
-Write-Output "[UHDC] CHROMIUM PROFILE REBUILD"
+Write-Output "[UHDC] BROWSER PROFILE RESET"
 Write-Output "========================================"
 
 if ([string]::IsNullOrWhiteSpace($Target) -or [string]::IsNullOrWhiteSpace($TargetUser)) { 
-    Write-Output "[!] ERROR: Both Target PC and Target User are required for a Profile Rebuild."
+    Write-Output "[!] ERROR: Both Target PC and Target User are required for a Profile Reset."
     return 
 }
 
@@ -50,7 +50,7 @@ if (-not (Test-Connection -ComputerName $Target -Count 1 -Quiet)) {
     return
 }
 
-$ActionLog = "Chromium Profile Rebuild Executed ($TargetUser)"
+$ActionLog = "Browser Profile Reset Executed ($TargetUser)"
 
 # Sanitize TargetUser to prevent quote injection
 $SafeUser = $TargetUser -replace "'", "''"
@@ -98,7 +98,7 @@ try {
     Write-Output " > Purging AppData and restoring bookmarks..."
 
     Invoke-Command -ComputerName $Target -ErrorAction Stop -ScriptBlock $PayloadBlock
-    Write-Output "`n[UHDC SUCCESS] Chromium profiles rebuilt successfully via WinRM!"
+    Write-Output "`n[UHDC SUCCESS] Browser profiles reset successfully via WinRM!"
 
 } catch {
     Write-Output "[!] WinRM Failed or Blocked. Initiating PsExec Fallback..."
@@ -113,7 +113,7 @@ try {
             $Process = Start-Process -FilePath $psExecPath -ArgumentList $ArgsList -Wait -WindowStyle Hidden -PassThru
 
             if ($Process.ExitCode -eq 0) {
-                Write-Output "`n[UHDC SUCCESS] Chromium profiles rebuilt successfully via PsExec!"
+                Write-Output "`n[UHDC SUCCESS] Browser profiles reset successfully via PsExec!"
                 $ActionLog += " [PsExec Fallback]"
             } else {
                 Write-Output "`n[!] ERROR: PsExec executed but returned exit code $($Process.ExitCode)."
