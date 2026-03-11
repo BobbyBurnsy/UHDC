@@ -26,8 +26,8 @@ $ErrorActionPreference = "Continue"
 if ($GetTrainingData) {
     $data = @{
         StepName = "BACKGROUND POLICY ENFORCEMENT"
-        Description = "We establish a remote WinRM session to execute the native Windows 'gpupdate' utility. We use the '/force' flag to reapply all policies, '/target:computer' to limit the scope, and '/wait:0' to ensure the command returns instantly without hanging our console if a policy requires a reboot."
-        Code = "try { Invoke-Command -ComputerName `$Target -ScriptBlock { gpupdate /force /target:computer /wait:0 } } catch { psexec.exe \\`$Target -s powershell.exe -EncodedCommand `$Base64 }"
+        Description = "While the UHDC uses WinRM and PowerShell runspaces in the background, a junior technician should know how to trigger a remote policy update manually. By utilizing Sysinternals PsExec, you can remotely execute the native 'gpupdate.exe' utility as the SYSTEM account. We use '/force' to reapply all policies, '/target:computer' to limit the scope, and the critical '/wait:0' flag to ensure the command returns instantly without hanging your console if a policy requires a reboot."
+        Code = "psexec \\`$Target -s gpupdate.exe /force /target:computer /wait:0"
         InPerson = "Opening an elevated Command Prompt, typing 'gpupdate /force', and waiting for the 'Computer Policy update has completed successfully' message."
     }
     $data | ConvertTo-Json | Write-Output
