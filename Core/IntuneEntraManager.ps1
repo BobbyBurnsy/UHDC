@@ -190,3 +190,4 @@ try {
 } catch {
     Write-Output "<div style='color:#e74c3c;'><i class='fa-solid fa-circle-xmark'></i> [!] Graph API Error: $($_.Exception.Message)</div>"
 }
+
