@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    UHDC Web-Ready Core: GlobalNetworkMap.ps1
+    UHDC Web-Ready Core: NetworkAssetTracker.ps1
 .DESCRIPTION
     A background scanner that compiles a master map of User-to-Computer relationships. 
     It scans Active Directory for enabled Windows 10/11 workstations, pings them, 
@@ -20,7 +20,7 @@ $ErrorActionPreference = "Continue"
 # --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
-        StepName = "GLOBAL ASSET TELEMETRY"
+        StepName = "NETWORK ASSET TRACKER"
         Description = "While the UHDC UI parses the background telemetry database automatically, a junior technician should know how to manually search the raw data if the graphical interface is unavailable. By using the classic 'find' command, you can instantly search the central JSON database from any command prompt to locate a user's active hardware."
         Code = "type `"\\server\UHDC`$\Core\UserHistory.json`" | find /i `"jsmith`""
         InPerson = "Walking the floor, going desk to desk, wiggling the mouse on every active computer, and writing down the username displayed on the Windows lock screen."
@@ -51,7 +51,7 @@ $BackupFile  = Join-Path -Path $SharedRoot -ChildPath "Core\UserHistory.json.bak
 $TempFile    = Join-Path -Path $SharedRoot -ChildPath "Core\UserHistory.json.tmp"
 
 Write-Output "========================================="
-Write-Output "      [UHDC] GLOBAL NETWORK MAPPER       "
+Write-Output "      [UHDC] NETWORK ASSET TRACKER       "
 Write-Output "========================================="
 Write-Output "[!] Scope limited to: Active Windows 10/11 Workstations"
 Write-Output "[!] Mode: Additive (Preserves History)"
