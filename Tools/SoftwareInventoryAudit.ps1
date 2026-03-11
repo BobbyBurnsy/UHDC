@@ -29,8 +29,8 @@ $ErrorActionPreference = "Continue"
 if ($GetTrainingData) {
     $data = @{
         StepName = "SOFTWARE INVENTORY AUDIT"
-        Description = "We establish a remote WinRM session to query the target's registry. We specifically avoid the 'Win32_Product' WMI class because it is incredibly slow and triggers MSI reconfigurations. Instead, we rapidly read the 64-bit and 32-bit 'Uninstall' registry hives to pull the exact Display Name, Version, and Publisher."
-        Code = "try { `$json = Invoke-Command -ComputerName `$Target -ScriptBlock `$Payload } catch { `$json = psexec.exe \\`$Target -s powershell.exe -EncodedCommand `$Base64 }"
+        Description = "Many junior techs are taught to use 'wmic product get name' to find installed software. However, querying the Win32_Product class is dangerous because it triggers a consistency check that can accidentally reconfigure or repair installed MSIs, causing massive CPU spikes. The UHDC safely parses the registry instead. To do this manually from the command line, you can use Sysinternals PsExec to query the Uninstall registry hive directly."
+        Code = "psexec \\`$Target reg query HKLM\Software\Microsoft\Windows\CurrentVersion\Uninstall /s /v DisplayName | findstr `"DisplayName`""
         InPerson = "Opening the Control Panel, navigating to 'Programs and Features' (appwiz.cpl), and scrolling through the list of installed applications."
     }
     $data | ConvertTo-Json | Write-Output
