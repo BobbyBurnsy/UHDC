@@ -26,9 +26,9 @@ $ErrorActionPreference = "Continue"
 if ($GetTrainingData) {
     $data = @{
         StepName = "MECM AGENT SYNCHRONIZATION"
-        Description = "We establish a remote WinRM session to restart the 'CcmExec' (SMS Agent Host) service. We explicitly stop the service, wait 4 seconds to ensure it fully releases its lock on the local MECM log files, and then start it again."
-        Code = "try { Invoke-Command -ComputerName `$Target -ScriptBlock { Stop-Service CcmExec -Force; Start-Sleep 4; Start-Service CcmExec } } catch { psexec.exe \\`$Target -s powershell.exe -EncodedCommand `$Base64 }"
-        InPerson = "Opening Services (services.msc), locating 'SMS Agent Host', right-clicking it, and selecting 'Restart'."
+        Description = "While the UHDC uses PowerShell to safely restart the service with a built-in delay, a junior technician should know how to bounce a service manually using classic command-line tools. By utilizing Sysinternals PsExec, you can remotely execute a chained CMD command as the SYSTEM account to stop the 'CcmExec' service, use a classic loopback ping to create a 4-second delay (allowing log file locks to release), and then start the service back up."
+        Code = "psexec \\`$Target -s cmd.exe /c `"net stop CcmExec & ping 127.0.0.1 -n 5 > nul & net start CcmExec`""
+        InPerson = "Opening Services (services.msc), locating 'SMS Agent Host', right-clicking it, and selecting 'Restart'. Alternatively, opening an elevated command prompt and typing the 'net stop' and 'net start' commands."
     }
     $data | ConvertTo-Json | Write-Output
     return
