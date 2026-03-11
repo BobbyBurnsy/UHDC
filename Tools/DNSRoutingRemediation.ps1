@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    UHDC Web-Ready Tool: DNSRoutingRemediation.ps1
+    UHDC Web-Ready Tool: DNSNetworkRefresh.ps1
 .DESCRIPTION
     Forcefully refreshes the target machine's DNS and NetBIOS registration
     on the domain controller. It executes 'ipconfig /flushdns', 'ipconfig /registerdns',
@@ -26,7 +26,7 @@ $ErrorActionPreference = "Continue"
 # --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
-        StepName = "DNS ROUTING REMEDIATION"
+        StepName = "DNS & NETWORK REFRESH"
         Description = "While the UHDC uses PowerShell runspaces in the background, a junior technician should know how to force a DNS and NetBIOS refresh manually using classic command-line tools. By utilizing Sysinternals PsExec, you can remotely execute a chained CMD command as the SYSTEM account to flush the DNS cache, re-register the IP address with the Domain Controller, and refresh the NetBIOS names in one swift motion."
         Code = "psexec \\`$Target -s cmd.exe /c `"ipconfig /flushdns & ipconfig /registerdns & nbtstat -RR`""
         InPerson = "Opening an elevated Command Prompt and typing 'ipconfig /flushdns', pressing Enter, typing 'ipconfig /registerdns', pressing Enter, and finally typing 'nbtstat -RR'."
@@ -37,7 +37,7 @@ if ($GetTrainingData) {
 
 # --- Main Execution ---
 Write-Output "========================================"
-Write-Output "[UHDC] DNS ROUTING REMEDIATION"
+Write-Output "[UHDC] DNS & NETWORK REFRESH"
 Write-Output "========================================"
 
 if ([string]::IsNullOrWhiteSpace($Target)) { 
@@ -51,7 +51,7 @@ if (-not (Test-Connection -ComputerName $Target -Count 1 -Quiet)) {
     Write-Output "[i] Target is reachable. Proceeding..."
 }
 
-$ActionLog = "DNS Routing Remediation Executed (Flush/Register/NBT)"
+$ActionLog = "DNS Network Refresh Executed (Flush/Register/NBT)"
 
 $Payload = {
     ipconfig /flushdns | Out-Null
