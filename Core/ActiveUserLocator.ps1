@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    UHDC Web-Ready Core: NetworkScan.ps1
+    UHDC Web-Ready Core: ActiveUserLocator.ps1
 .DESCRIPTION
     A multi-vector intelligence engine designed to locate a specific user on the network.
     It utilizes a cascading fallback logic:
@@ -28,7 +28,7 @@ $ErrorActionPreference = "Continue"
 # --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
-        StepName = "MULTI-VECTOR IDENTITY LOCATOR"
+        StepName = "ACTIVE USER LOCATOR"
         Description = "The UHDC automates a complex 3-stage hunt (Local DB -> Intune -> AD Subnet Sweep) to find a user. However, a junior technician must know how to manually check who is logged into a specific computer without relying on complex PowerShell scripts. Using the classic Windows Management Instrumentation Command-line (WMIC) utility, you can instantly query a remote PC from a standard command prompt to see exactly who is physically sitting at the keyboard."
         Code = "wmic /node:`"TargetPC`" computersystem get username"
         InPerson = "Checking your personal notes, checking the cloud asset management portal, and finally walking the floor of their department to check the lock screen of every active computer."
@@ -52,7 +52,7 @@ $HistoryFile  = Join-Path -Path $SharedRoot -ChildPath "Core\UserHistory.json"
 $UpdateHelper = Join-Path -Path $SharedRoot -ChildPath "Core\Helper_UpdateHistory.ps1"
 
 Write-Output "========================================"
-Write-Output "[UHDC] MULTI-VECTOR NETWORK SCAN"
+Write-Output "[UHDC] ACTIVE USER LOCATOR"
 Write-Output "========================================"
 
 # --- Identity Resolution ---
@@ -180,7 +180,7 @@ if ($foundPC) {
     } catch {}
 
     $html = "<div style='background: #1e293b; padding: 16px; border-radius: 8px; border-left: 4px solid #9b59b6; margin-top: 15px; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); font-family: system-ui, sans-serif;'>"
-    $html += "<div style='color: #f8fafc; font-weight: bold; font-size: 1.1rem; margin-bottom: 8px;'><i class='fa-solid fa-satellite-dish'></i> Network Locator Result</div>"
+    $html += "<div style='color: #f8fafc; font-weight: bold; font-size: 1.1rem; margin-bottom: 8px;'><i class='fa-solid fa-magnifying-glass-location'></i> Active User Locator Result</div>"
     $html += "<div style='color: #2ecc71; font-size: 1.3rem; font-weight: bold; margin-bottom: 4px;'>$foundPC</div>"
     $html += "<div style='color: #94a3b8; font-size: 0.9rem;'><i class='fa-solid fa-crosshairs'></i> Found via: <span style='color: #cbd5e1;'>$foundVector</span></div>"
     $html += "</div>"
