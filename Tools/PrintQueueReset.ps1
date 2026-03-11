@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    UHDC Web-Ready Tool: PrintSpoolerOrchestration.ps1
+    UHDC Web-Ready Tool: PrintQueueReset.ps1
 .DESCRIPTION
     Remotely stops the Print Spooler service, forcibly deletes any
     stuck files in the spool\PRINTERS directory, and then restarts the service.
@@ -25,7 +25,7 @@ $ErrorActionPreference = "Continue"
 # --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
-        StepName = "PRINT SPOOLER ORCHESTRATION"
+        StepName = "PRINT QUEUE RESET"
         Description = "While the UHDC uses PowerShell in the background, a junior technician should know how to clear a print queue manually using classic command-line tools. By utilizing Sysinternals PsExec, you can remotely execute a chained CMD command as the SYSTEM account to stop the spooler service, forcefully delete the corrupted print jobs, and start the service back up in one swift motion."
         Code = "psexec \\`$Target -s cmd.exe /c `"net stop spooler & del /Q /F /S %systemroot%\System32\Spool\Printers\*.* & net start spooler`""
         InPerson = "Opening services.msc to stop the Print Spooler, navigating to C:\Windows\System32\spool\PRINTERS to delete all files, and then starting the service again. Alternatively, opening a local command prompt as Administrator and running the same 'net stop' and 'del' commands."
@@ -36,7 +36,7 @@ if ($GetTrainingData) {
 
 # --- Main Execution ---
 Write-Output "========================================"
-Write-Output "[UHDC] PRINT SPOOLER ORCHESTRATION"
+Write-Output "[UHDC] PRINT QUEUE RESET"
 Write-Output "========================================"
 
 if ([string]::IsNullOrWhiteSpace($Target)) { 
@@ -49,7 +49,7 @@ if (-not (Test-Connection -ComputerName $Target -Count 1 -Quiet)) {
     return
 }
 
-$ActionLog = "Print Spooler Orchestration Executed (Queue Cleared)"
+$ActionLog = "Print Queue Reset Executed"
 
 $Payload = {
     Stop-Service -Name Spooler -Force -ErrorAction SilentlyContinue | Out-Null
