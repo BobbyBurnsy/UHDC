@@ -26,9 +26,9 @@ $ErrorActionPreference = "Continue"
 if ($GetTrainingData) {
     $data = @{
         StepName = "SYSTEM UPTIME VERIFICATION"
-        Description = "We establish a remote WinRM session to query the 'Win32_OperatingSystem' class. We retrieve the exact 'LastBootUpTime' property and subtract it from the current time to calculate the precise number of days, hours, and minutes the machine has been running continuously."
-        Code = "try { `$boot = Invoke-Command -ComputerName `$Target -ScriptBlock { (Get-CimInstance Win32_OperatingSystem).LastBootUpTime } } catch { `$boot = psexec.exe \\`$Target -s powershell.exe -EncodedCommand `$Base64 }"
-        InPerson = "Pressing Ctrl+Shift+Esc to open Task Manager, clicking the 'Performance' tab, selecting 'CPU', and looking at the 'Up time' counter at the bottom."
+        Description = "While the UHDC uses PowerShell and WMI in the background for speed, a junior technician should know how to check this manually using classic command-line tools. By utilizing Sysinternals PsExec, you can remotely execute the 'systeminfo' command and pipe the output to 'find' to instantly grab the exact boot time without needing complex PowerShell scripts. This is a highly reliable fallback when WMI is broken."
+        Code = "psexec \\`$Target systeminfo | find `"System Boot Time`""
+        InPerson = "Pressing Ctrl+Shift+Esc to open Task Manager, clicking the 'Performance' tab, selecting 'CPU', and looking at the 'Up time' counter at the bottom. Alternatively, opening a local command prompt and typing: systeminfo | find `"System Boot Time`""
     }
     $data | ConvertTo-Json | Write-Output
     return
