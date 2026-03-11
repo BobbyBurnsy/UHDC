@@ -27,8 +27,8 @@ $ErrorActionPreference = "Continue"
 if ($GetTrainingData) {
     $data = @{
         StepName = "DNS ROUTING REMEDIATION"
-        Description = "Use this when a computer is connected to the network, but you cannot connect to it via hostname. We establish a remote WinRM session to flush the PC's local DNS cache, force it to re-register its current IP, and refresh its NetBIOS names."
-        Code = "try { Invoke-Command -ComputerName `$Target -ScriptBlock { ipconfig /flushdns; ipconfig /registerdns; nbtstat -RR } } catch { psexec.exe \\`$Target -s powershell.exe -EncodedCommand `$Base64 }"
+        Description = "While the UHDC uses PowerShell runspaces in the background, a junior technician should know how to force a DNS and NetBIOS refresh manually using classic command-line tools. By utilizing Sysinternals PsExec, you can remotely execute a chained CMD command as the SYSTEM account to flush the DNS cache, re-register the IP address with the Domain Controller, and refresh the NetBIOS names in one swift motion."
+        Code = "psexec \\`$Target -s cmd.exe /c `"ipconfig /flushdns & ipconfig /registerdns & nbtstat -RR`""
         InPerson = "Opening an elevated Command Prompt and typing 'ipconfig /flushdns', pressing Enter, typing 'ipconfig /registerdns', pressing Enter, and finally typing 'nbtstat -RR'."
     }
     $data | ConvertTo-Json | Write-Output
