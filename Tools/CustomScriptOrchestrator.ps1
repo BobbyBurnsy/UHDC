@@ -39,8 +39,8 @@ $ErrorActionPreference = "Continue"
 if ($GetTrainingData) {
     $data = @{
         StepName = "CUSTOM SCRIPT ORCHESTRATOR"
-        Description = "We read the custom script from the network share into memory, convert it into a ScriptBlock, and dispatch it to the target(s) via WinRM. This bypasses the 'Double-Hop' authentication issue and allows us to capture the script's actual output."
-        Code = "`$Payload = Get-Content `$ScriptPath -Raw`nInvoke-Command -ComputerName `$Target -ScriptBlock ([scriptblock]::Create(`$Payload))"
+        Description = "While the UHDC uses in-memory ScriptBlocks and WinRM for mass concurrency, a junior technician should know how to manually deploy a PowerShell script to a remote machine. By utilizing Sysinternals PsExec, you can remotely invoke the PowerShell executable, bypass the local execution policy, and run a script directly from a network share as the SYSTEM account."
+        Code = "psexec \\`$Target -s powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File `"\\server\share\scripts\YourScript.ps1`""
         InPerson = "Copying a .ps1 file to a flash drive, walking to the user's desk, opening PowerShell as Administrator, and running the script manually."
     }
     $data | ConvertTo-Json | Write-Output
