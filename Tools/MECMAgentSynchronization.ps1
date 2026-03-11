@@ -1,8 +1,8 @@
 <#
 .SYNOPSIS
-    UHDC Web-Ready Tool: MECMAgentSynchronization.ps1
+    UHDC Web-Ready Tool: SCCMAgentRestart.ps1
 .DESCRIPTION
-    Remotely restarts the MECM (formerly SCCM) Agent service (CcmExec).
+    Remotely restarts the SCCM Agent service (CcmExec).
     Includes a 4-second delay to ensure log file locks are released gracefully.
 #>
 
@@ -25,7 +25,7 @@ $ErrorActionPreference = "Continue"
 # --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
-        StepName = "MECM AGENT SYNCHRONIZATION"
+        StepName = "SCCM AGENT RESTART"
         Description = "While the UHDC uses PowerShell to safely restart the service with a built-in delay, a junior technician should know how to bounce a service manually using classic command-line tools. By utilizing Sysinternals PsExec, you can remotely execute a chained CMD command as the SYSTEM account to stop the 'CcmExec' service, use a classic loopback ping to create a 4-second delay (allowing log file locks to release), and then start the service back up."
         Code = "psexec \\`$Target -s cmd.exe /c `"net stop CcmExec & ping 127.0.0.1 -n 5 > nul & net start CcmExec`""
         InPerson = "Opening Services (services.msc), locating 'SMS Agent Host', right-clicking it, and selecting 'Restart'. Alternatively, opening an elevated command prompt and typing the 'net stop' and 'net start' commands."
@@ -36,7 +36,7 @@ if ($GetTrainingData) {
 
 # --- Main Execution ---
 Write-Output "========================================"
-Write-Output "[UHDC] MECM AGENT SYNCHRONIZATION"
+Write-Output "[UHDC] SCCM AGENT RESTART"
 Write-Output "========================================"
 
 if ([string]::IsNullOrWhiteSpace($Target)) { 
@@ -49,7 +49,7 @@ if (-not (Test-Connection -ComputerName $Target -Count 1 -Quiet)) {
     return
 }
 
-$ActionLog = "MECM Agent Synchronization Executed (CcmExec)"
+$ActionLog = "SCCM Agent Restart Executed (CcmExec)"
 
 $Payload = {
     Stop-Service -Name CcmExec -Force -ErrorAction SilentlyContinue | Out-Null
@@ -61,7 +61,7 @@ try {
     Write-Output "[i] Attempting connection to $Target via WinRM..."
     Invoke-Command -ComputerName $Target -ErrorAction Stop -ScriptBlock $Payload
 
-    Write-Output "`n[UHDC SUCCESS] MECM Agent synchronized successfully via WinRM!"
+    Write-Output "`n[UHDC SUCCESS] SCCM Agent restarted successfully via WinRM!"
     Write-Output "[i] Note: It may take 2-3 minutes for the endpoint to check in with the Management Point."
 
 } catch {
@@ -77,7 +77,7 @@ try {
             $Process = Start-Process -FilePath $psExecPath -ArgumentList $ArgsList -Wait -WindowStyle Hidden -PassThru
 
             if ($Process.ExitCode -eq 0) {
-                Write-Output "`n[UHDC SUCCESS] MECM Agent synchronized successfully via PsExec!"
+                Write-Output "`n[UHDC SUCCESS] SCCM Agent restarted successfully via PsExec!"
                 Write-Output "[i] Note: It may take 2-3 minutes for the endpoint to check in with the Management Point."
                 $ActionLog += " [PsExec Fallback]"
             } else {
