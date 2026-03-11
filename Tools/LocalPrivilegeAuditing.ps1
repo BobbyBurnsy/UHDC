@@ -26,9 +26,9 @@ $ErrorActionPreference = "Continue"
 if ($GetTrainingData) {
     $data = @{
         StepName = "LOCAL PRIVILEGE AUDITING"
-        Description = "We establish a WinRM session to query the local SAM (Security Account Manager) database of the target machine. We specifically target the built-in 'Administrators' group and return its members, identifying whether they are local accounts or Active Directory objects."
-        Code = "try { `$json = Invoke-Command -ComputerName `$Target -ScriptBlock `$Payload } catch { `$json = psexec.exe \\`$Target -s powershell.exe -EncodedCommand `$Base64 }"
-        InPerson = "Right-click the Start Menu, select 'Computer Management' (compmgmt.msc), expand 'Local Users and Groups', click 'Groups', and double-click the 'Administrators' group to view its members."
+        Description = "While the UHDC uses PowerShell in the background to parse and format the data, a junior technician should know how to audit local groups manually using classic command-line tools. By utilizing Sysinternals PsExec, you can remotely execute the native 'net localgroup' command to instantly list all members of the local Administrators group, exposing any unauthorized accounts or verifying LAPS functionality."
+        Code = "psexec \\`$Target net localgroup administrators"
+        InPerson = "Opening Computer Management (compmgmt.msc), navigating to Local Users and Groups -> Groups, and double-clicking 'Administrators'. Alternatively, opening a local command prompt and typing: net localgroup administrators"
     }
     $data | ConvertTo-Json | Write-Output
     return
