@@ -27,8 +27,8 @@ $ErrorActionPreference = "Continue"
 if ($GetTrainingData) {
     $data = @{
         StepName = "OUT-OF-BAND DATA PRESERVATION"
-        Description = "We are bypassing standard SMB file-sharing firewalls using an Out-of-Band extraction technique. We execute a payload on the target that reads the user's Chrome and Edge bookmark files, encodes them into Base64 strings, and transmits them back to our console via standard command output streams. We then decode the strings locally and reconstruct the files."
-        Code = "try { `$out = Invoke-Command -ComputerName `$Target -ScriptBlock `$Payload } catch { `$out = psexec.exe \\`$Target -s powershell.exe -EncodedCommand `$Base64 }`n# Decode Base64 output back into files locally"
+        Description = "While the UHDC uses a complex Base64 encoding pipeline to bypass strict SMB firewalls, a junior technician should know how to manually extract files over the network using classic administrative shares. By utilizing the built-in 'xcopy' command, you can reach directly into the target's hidden C`$ share and pull their Chrome bookmarks file straight to your local desktop."
+        Code = "xcopy `"\\`$Target\C`$\Users\`$TargetUser\AppData\Local\Google\Chrome\User Data\Default\Bookmarks`" `"%USERPROFILE%\Desktop\`" /Y"
         InPerson = "Opening File Explorer, typing '%LocalAppData%\Google\Chrome\User Data\Default' into the address bar, copying the 'Bookmarks' file, and saving it to a flash drive."
     }
     $data | ConvertTo-Json | Write-Output
