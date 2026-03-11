@@ -28,8 +28,8 @@ $ErrorActionPreference = "Continue"
 if ($GetTrainingData) {
     $data = @{
         StepName = "DEEP STORAGE REMEDIATION"
-        Description = "We execute a unified pipeline: 1. Query Win32_LogicalDisk for current free space. 2. Purge the MECM (SCCM) cache, Windows Temp, User Temp directories, and the Recycle Bin. 3. Re-query the disk to calculate exact bytes freed. 4. Trigger a silent Windows Disk Cleanup (cleanmgr /sagerun:1) in the background."
-        Code = "`$before = (Get-CimInstance Win32_LogicalDisk -Filter `"DeviceID='C:'`").FreeSpace`nRemove-Item 'C:\Windows\ccmcache\*' -Recurse -Force`n`$after = (Get-CimInstance Win32_LogicalDisk -Filter `"DeviceID='C:'`").FreeSpace"
+        Description = "While the UHDC uses PowerShell to calculate exact bytes freed and dynamically loop through all user profiles, a junior technician should know how to forcefully clear system caches manually. By utilizing Sysinternals PsExec, you can remotely execute a chained CMD command as the SYSTEM account to wipe the Windows Temp folder, clear the SCCM cache, and trigger the native Windows Disk Cleanup utility in the background."
+        Code = "psexec \\`$Target -s cmd.exe /c `"del /q /f /s C:\Windows\Temp\* & del /q /f /s C:\Windows\ccmcache\* & cleanmgr.exe /sagerun:1`""
         InPerson = "Opening Control Panel to clear the Configuration Manager cache, pressing Win+R to delete %temp% files, emptying the Recycle Bin, and running the Disk Cleanup utility."
     }
     $data | ConvertTo-Json | Write-Output
