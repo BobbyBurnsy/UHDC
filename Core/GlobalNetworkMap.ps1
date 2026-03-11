@@ -20,10 +20,10 @@ $ErrorActionPreference = "Continue"
 # --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
-        StepName = "GLOBAL NETWORK MAPPER"
-        Description = "This engine sweeps Active Directory for all enabled Windows 10/11 workstations. It pings each machine and uses WMI to identify the currently logged-on user. It then compiles this data into a central JSON database using a composite key (User-Computer) to track users across multiple devices."
-        Code = "`$computers = Get-ADComputer -Filter `$filter`nforeach (`$pc in `$computers) {`n    `$user = (Get-CimInstance Win32_ComputerSystem -ComputerName `$pc).UserName`n    `$masterDB[`"`$user-`$pc`"] = `$entry`n}`n# Save to .tmp then rename to .json"
-        InPerson = "Walking the floor, going desk to desk, wiggling the mouse on every active computer, writing down the username displayed on the lock screen, and updating a master Excel spreadsheet."
+        StepName = "GLOBAL ASSET TELEMETRY"
+        Description = "While the UHDC UI parses the background telemetry database automatically, a junior technician should know how to manually search the raw data if the graphical interface is unavailable. By using the classic 'find' command, you can instantly search the central JSON database from any command prompt to locate a user's active hardware."
+        Code = "type `"\\server\UHDC`$\Core\UserHistory.json`" | find /i `"jsmith`""
+        InPerson = "Walking the floor, going desk to desk, wiggling the mouse on every active computer, and writing down the username displayed on the Windows lock screen."
     }
     $data | ConvertTo-Json | Write-Output
     return
