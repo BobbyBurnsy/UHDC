@@ -36,9 +36,9 @@ $ErrorActionPreference = "Continue"
 if ($GetTrainingData) {
     $data = @{
         StepName = "CLOUD IDENTITY ORCHESTRATOR"
-        Description = "We are querying the Microsoft Graph API using your active Entra ID session. The script extracts your technician email domain and compares it against the target user to enforce tenant security boundaries. It operates entirely on Delegated Permissions."
-        Code = "Connect-MgGraph -Scopes `$scopes`n`$device = Get-MgDeviceManagementManagedDevice -Filter `"deviceName eq '`$Target'`""
-        InPerson = "Logging into endpoint.microsoft.com, searching for the user or device, verifying their department matches your support scope, and clicking the corresponding action button."
+        Description = "Because this module interacts with Entra ID and Intune, there is no classic 'CMD' equivalent. The modern command-line for the Microsoft Cloud is the Graph API. While the UHDC automates the complex authentication and device correlation, a junior technician should know how to manually pull critical data, like a BitLocker recovery key, directly from a standard PowerShell terminal using the Microsoft.Graph module."
+        Code = "Get-MgInformationProtectionBitlockerRecoveryKey -Filter `"deviceId eq '<AzureAD-Device-ID>'`""
+        InPerson = "Logging into the Microsoft Endpoint Manager (Intune) web portal, searching for the user or device, navigating to the 'Recovery Keys' tab, and copying the 48-digit key."
     }
     $data | ConvertTo-Json | Write-Output
     return
@@ -189,8 +189,4 @@ try {
     }
 } catch {
     Write-Output "<div style='color:#e74c3c;'><i class='fa-solid fa-circle-xmark'></i> [!] Graph API Error: $($_.Exception.Message)</div>"
-}
-} catch {
-    Write-Output "<div style='color:#e74c3c;'><i class='fa-solid fa-circle-xmark'></i> [!] Graph API Error: $($_.Exception.Message)</div>"
-
 }
