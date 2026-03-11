@@ -26,9 +26,9 @@ $ErrorActionPreference = "Continue"
 if ($GetTrainingData) {
     $data = @{
         StepName = "BITLOCKER STATUS VERIFICATION"
-        Description = "We establish a remote WinRM session to query the target's BitLocker management interface. This retrieves the encryption status, protection state, and active key protectors for all mounted volumes."
-        Code = "try { `$json = Invoke-Command -ComputerName `$Target -ScriptBlock `$Payload } catch { `$json = psexec.exe \\`$Target -s powershell.exe -EncodedCommand `$Base64 }"
-        InPerson = "Open an elevated Command Prompt and type 'manage-bde -status', or navigate to 'Control Panel > System and Security > BitLocker Drive Encryption'."
+        Description = "While the UHDC uses the BitLocker PowerShell module to parse and format volume data into a clean UI, a junior technician should know how to check encryption status manually. By utilizing Sysinternals PsExec, you can remotely execute the native 'manage-bde' command as the SYSTEM account to instantly view the encryption status, protection state, and lock status of all drives on the target machine."
+        Code = "psexec \\`$Target -s manage-bde -status"
+        InPerson = "Opening an elevated Command Prompt and typing 'manage-bde -status', or navigating to 'Control Panel > System and Security > BitLocker Drive Encryption'."
     }
     $data | ConvertTo-Json | Write-Output
     return
