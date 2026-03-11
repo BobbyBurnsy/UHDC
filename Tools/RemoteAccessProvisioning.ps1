@@ -26,9 +26,9 @@ $ErrorActionPreference = "Continue"
 if ($GetTrainingData) {
     $data = @{
         StepName = "REMOTE ACCESS PROVISIONING"
-        Description = "We execute a 3-step pipeline to fully provision RDP: 1. Modifying the 'fDenyTSConnections' registry key to allow connections. 2. Opening the local Windows Defender Firewall for the 'Remote Desktop' rule group. 3. Configuring the 'TermService' to start automatically and forcing it to run."
-        Code = "try { Invoke-Command -ComputerName `$Target -ScriptBlock { Set-ItemProperty ...; Enable-NetFirewallRule ...; Start-Service TermService } } catch { psexec.exe \\`$Target -s powershell.exe -EncodedCommand `$Base64 }"
-        InPerson = "Opening System Properties to allow remote connections, opening Windows Firewall to allow the app through, and opening services.msc to start the Remote Desktop Services service."
+        Description = "While the UHDC uses PowerShell to orchestrate the registry, firewall, and service dependencies, a junior technician should know how to provision RDP manually from the command line. By utilizing Sysinternals PsExec, you can remotely execute a chained CMD command as the SYSTEM account to modify the 'fDenyTSConnections' registry key using 'reg add', open the Windows Firewall using 'netsh', and start the Terminal Services service all at once."
+        Code = "psexec \\`$Target -s cmd.exe /c `"reg add `"HKLM\System\CurrentControlSet\Control\Terminal Server`" /v fDenyTSConnections /t REG_DWORD /d 0 /f & netsh advfirewall firewall set rule group=`"Remote Desktop`" new enable=Yes & net start TermService`""
+        InPerson = "Opening System Properties to allow remote connections, opening Windows Defender Firewall to allow the app through, and opening services.msc to start the Remote Desktop Services service."
     }
     $data | ConvertTo-Json | Write-Output
     return
