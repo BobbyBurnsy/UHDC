@@ -30,9 +30,9 @@ $ErrorActionPreference = "Continue"
 if ($GetTrainingData) {
     $data = @{
         StepName = "ADVANCED EVENT FORENSICS"
-        Description = "We establish a remote WinRM session to execute 'Get-WinEvent' directly on the target machine. We filter the System and Application logs, package the top 50 results into a JSON string, and transmit them back to the console to render the HTML table and save a CSV backup."
-        Code = "try { `$json = Invoke-Command -ComputerName `$Target -ScriptBlock `$Payload } catch { `$json = psexec.exe \\`$Target -s powershell.exe -EncodedCommand `$Base64 }"
-        InPerson = "Opening Event Viewer (eventvwr.msc), filtering the System and Application logs for Critical/Error events, or using the 'Find' feature to search for a specific application crash."
+        Description = "While the UHDC uses PowerShell to parse and format thousands of logs into a clean UI table, a junior technician should know how to pull event logs manually from the command line. By utilizing Sysinternals PsExec, you can remotely execute the native Windows Event Utility ('wevtutil') to instantly grab the latest system events in plain text without needing to open the slow Event Viewer GUI."
+        Code = "psexec \\`$Target wevtutil qe System /c:10 /f:text /rd:true"
+        InPerson = "Opening Event Viewer (eventvwr.msc), navigating to Windows Logs -> System, and filtering the log for Critical and Error events."
     }
     $data | ConvertTo-Json | Write-Output
     return
