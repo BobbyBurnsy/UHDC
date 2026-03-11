@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    UHDC Web-Ready Tool: HardwareDegradationAnalysis.ps1
+    UHDC Web-Ready Tool: BatteryHealthAnalyzer.ps1
 .DESCRIPTION
     Queries the raw WMI/CIM battery classes to extract exact milliwatt-hour (mWh) metrics. 
     It calculates the degradation percentage and outputs a styled HTML payload.
@@ -25,10 +25,10 @@ $ErrorActionPreference = "Continue"
 # --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
-        StepName = "HARDWARE DEGRADATION ANALYSIS"
-        Description = "Instead of generating a clunky HTML file, we establish a remote WinRM session to query the raw WMI/CIM classes ('BatteryStaticData' and 'BatteryFullChargedCapacity'). We extract the exact milliwatt-hour (mWh) metrics, calculate the degradation percentage, and render a graphical health bar directly in the console."
-        Code = "try { `$json = Invoke-Command -ComputerName `$Target -ScriptBlock `$Payload } catch { `$json = psexec.exe \\`$Target -s powershell.exe -EncodedCommand `$Base64 }"
-        InPerson = "Opening an elevated Command Prompt, typing 'powercfg /batteryreport', opening the generated HTML file, and manually doing the math between Design Capacity and Full Charge Capacity."
+        StepName = "BATTERY HEALTH ANALYZER"
+        Description = "While the UHDC uses PowerShell to query the raw WMI battery namespaces and render a graphical health bar, a junior technician should know how to generate a battery report manually using classic command-line tools. By utilizing Sysinternals PsExec, you can remotely execute the native 'powercfg' utility to generate a comprehensive HTML battery report directly on the target's C: drive."
+        Code = "psexec \\`$Target powercfg /batteryreport /output `"C:\battery_report.html`""
+        InPerson = "Opening an elevated Command Prompt, typing 'powercfg /batteryreport', opening the generated HTML file in a browser, and manually doing the math between Design Capacity and Full Charge Capacity."
     }
     $data | ConvertTo-Json | Write-Output
     return
@@ -36,7 +36,7 @@ if ($GetTrainingData) {
 
 # --- Main Execution ---
 Write-Output "========================================"
-Write-Output "[UHDC] HARDWARE DEGRADATION ANALYSIS"
+Write-Output "[UHDC] BATTERY HEALTH ANALYZER"
 Write-Output "========================================"
 
 if ([string]::IsNullOrWhiteSpace($Target)) { 
@@ -49,7 +49,7 @@ if (-not (Test-Connection -ComputerName $Target -Count 1 -Quiet)) {
     return
 }
 
-$ActionLog = "Hardware Degradation Analysis Executed"
+$ActionLog = "Battery Health Analyzer Executed"
 
 $PayloadString = @"
     `$ErrorActionPreference = 'SilentlyContinue'
