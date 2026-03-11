@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    UHDC Web-Ready Tool: AdvancedPowerControls.ps1
+    UHDC Web-Ready Tool: RemotePowerControls.ps1
 .DESCRIPTION
     Provides comprehensive power management for remote endpoints.
     Attempts to execute native Windows power commands (shutdown, rwinsta) via WinRM.
@@ -29,7 +29,7 @@ $ErrorActionPreference = "Continue"
 # --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
-        StepName = "ADVANCED POWER CONTROLS: $PowerAction"
+        StepName = "REMOTE POWER CONTROLS: $PowerAction"
         Description = "We establish a remote WinRM session to execute native Windows power commands. If the machine's WMI repository is frozen or the firewall blocks RPC traffic, we automatically fall back to PsExec."
         Code = "try { Invoke-Command -ComputerName `$Target -ScriptBlock { shutdown.exe /r /t 60 } } catch { psexec.exe \\`$Target -s powershell.exe -EncodedCommand `$Base64 }"
         InPerson = "Clicking the Start Menu, selecting the Power icon, and clicking 'Restart'."
@@ -55,7 +55,7 @@ if ($GetTrainingData) {
 
 # --- Main Execution ---
 Write-Output "========================================"
-Write-Output "[UHDC] ADVANCED POWER CONTROLS"
+Write-Output "[UHDC] REMOTE POWER CONTROLS"
 Write-Output "========================================"
 
 if ([string]::IsNullOrWhiteSpace($Target)) { 
@@ -68,7 +68,7 @@ if (-not (Test-Connection -ComputerName $Target -Count 1 -Quiet)) {
     return
 }
 
-$ActionLog = "Power Control Executed: $PowerAction"
+$ActionLog = "Remote Power Control Executed: $PowerAction"
 
 $cmdString = switch ($PowerAction) {
     "Restart"      { "shutdown.exe /r /t 60" }
