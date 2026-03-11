@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    UHDC Web-Ready Tool: SoftwareInventoryAudit.ps1
+    UHDC Web-Ready Tool: InstalledSoftwareAudit.ps1
 .DESCRIPTION
     Remotely queries the target computer's registry to compile a list of installed software.
     Supports partial keyword matching. Bypasses the slow Win32_Product WMI class.
@@ -28,7 +28,7 @@ $ErrorActionPreference = "Continue"
 # --- Export Training Data ---
 if ($GetTrainingData) {
     $data = @{
-        StepName = "SOFTWARE INVENTORY AUDIT"
+        StepName = "INSTALLED SOFTWARE AUDIT"
         Description = "Many junior techs are taught to use 'wmic product get name' to find installed software. However, querying the Win32_Product class is dangerous because it triggers a consistency check that can accidentally reconfigure or repair installed MSIs, causing massive CPU spikes. The UHDC safely parses the registry instead. To do this manually from the command line, you can use Sysinternals PsExec to query the Uninstall registry hive directly."
         Code = "psexec \\`$Target reg query HKLM\Software\Microsoft\Windows\CurrentVersion\Uninstall /s /v DisplayName | findstr `"DisplayName`""
         InPerson = "Opening the Control Panel, navigating to 'Programs and Features' (appwiz.cpl), and scrolling through the list of installed applications."
@@ -39,7 +39,7 @@ if ($GetTrainingData) {
 
 # --- Main Execution ---
 Write-Output "========================================"
-Write-Output "[UHDC] SOFTWARE INVENTORY AUDIT"
+Write-Output "[UHDC] INSTALLED SOFTWARE AUDIT"
 Write-Output "========================================"
 
 if ([string]::IsNullOrWhiteSpace($Target)) { 
@@ -52,7 +52,7 @@ if (-not (Test-Connection -ComputerName $Target -Count 1 -Quiet)) {
     return
 }
 
-$ActionLog = if ($Keyword) { "Software Audit Executed (Keyword: $Keyword)" } else { "Software Audit Executed (Full)" }
+$ActionLog = if ($Keyword) { "Installed Software Audit Executed (Keyword: $Keyword)" } else { "Installed Software Audit Executed (Full)" }
 
 $PayloadString = @"
     `$ErrorActionPreference = 'SilentlyContinue'
