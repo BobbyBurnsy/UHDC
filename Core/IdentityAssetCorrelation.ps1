@@ -27,9 +27,9 @@ $ErrorActionPreference = "Continue"
 if ($GetTrainingData) {
     $data = @{
         StepName = "IDENTITY & ASSET CORRELATION"
-        Description = "We execute a dual-pronged intelligence query. First, we parse the central UserHistory database to map the user to their hardware. Second, we query Active Directory for their profile, check their lockout status, calculate their password expiration date, and filter their AD groups."
-        Code = "`$history = `$raw | Where-Object { `$_.User -eq `$TargetUser }`n`$adObj = Get-ADUser -Identity `$TargetUser -Properties LockedOut, PasswordLastSet, MemberOf`n`$policy = Get-ADDefaultDomainPasswordPolicy`n`$expDate = `$adObj.PasswordLastSet.AddDays(`$policy.MaxPasswordAge.Days)"
-        InPerson = "Asking the user for their computer name, opening ADUC to check if their account is locked, checking their 'Member Of' tab, and manually calculating 90 days from their last password reset."
+        Description = "While the UHDC uses the ActiveDirectory PowerShell module to parse and format data for the UI, a junior technician should know how to quickly look up a user's domain profile using classic command-line tools. The 'net user' command instantly returns the user's lockout status, exact password expiration date, and group memberships without needing to open the heavy ADUC graphical interface."
+        Code = "net user `$TargetUser /domain"
+        InPerson = "Opening Active Directory Users and Computers (ADUC), searching for the user, checking the 'Account' tab to see if the 'Unlock account' box is checked, checking the 'Member Of' tab, and manually calculating their password expiration date."
     }
     $data | ConvertTo-Json | Write-Output
     return
