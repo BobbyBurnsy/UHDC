@@ -11,7 +11,7 @@ Write-Host " [UHDC] API GATEWAY INITIALIZING" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 
 # --- Ensure required directories exist ---
-$RequiredFolders = @("Core", "Tools", "Logs", "Config", "TelemetryDrop")
+$RequiredFolders = @("Core", "Tools", "Logs", "Config")
 foreach ($Folder in $RequiredFolders) {
     $FolderPath = Join-Path $ScriptRoot $Folder
     if (-not (Test-Path $FolderPath)) { 
