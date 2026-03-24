@@ -1,9 +1,0 @@
-CREATE TABLE AssetTelemetry (
-    Username VARCHAR(100),
-    ComputerName VARCHAR(100),
-    IPAddress VARCHAR(50),
-    MACAddress VARCHAR(50),
-    LastSeen DATETIME,
-    PRIMARY KEY (Username, ComputerName)
-
-);
